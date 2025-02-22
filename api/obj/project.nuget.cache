@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "9v0xWXJduRY=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Diego Debroy\\Desktop\\Proyecto1\\api\\api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Diego Debroy\\.nuget\\packages\\antlr4.runtime.standard\\4.13.1\\antlr4.runtime.standard.4.13.1.nupkg.sha512",
+    "C:\\Users\\Diego Debroy\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.1\\microsoft.aspnetcore.openapi.9.0.1.nupkg.sha512",
+    "C:\\Users\\Diego Debroy\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}

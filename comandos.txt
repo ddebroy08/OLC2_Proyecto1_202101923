@@ -1,0 +1,9 @@
+GENERAR GRAMÁTICA
+antlr -Dlanguage=CSharp -o analyzer -package analyzer -visitor *.g4
+PARA CORRERLO
+dotnet watch run
+
+
+FRONT
+Next React
+npx create-next-app@latest

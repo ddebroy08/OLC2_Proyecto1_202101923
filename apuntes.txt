@@ -1,0 +1,11 @@
+
+GRAMTICA
+operarores logicos
+asignaciones
+
+
+agregar a compiler visitor los cambios de la gramática
+
+crear clase valueWrapper en la carpeta compiler
+
+en compilervisitor cambiar los tipos int por valueWrapper 
