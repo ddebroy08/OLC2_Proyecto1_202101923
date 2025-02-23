@@ -1,4 +1,5 @@
 
+using System.Globalization;
 using analyzer;
 
 public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
@@ -62,7 +63,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         //output += value + "\n";
         output += value switch {
             IntValue i => i.Value.ToString(),
-            FloatValue f => f.Value.ToString(),
+            FloatValue f => f.Value.ToString("G", CultureInfo.InvariantCulture),
             StringValue s => s.Value,
             BoolValue b => b.Value.ToString(),
             RuneValue r => ((int)r.Value).ToString(),
@@ -142,7 +143,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
 
     //VisitFloat
     public override ValueWrapper VisitFloat(LanguageParser.FloatContext context) {
-        return new FloatValue(float.Parse(context.FLOAT().GetText()));
+        return new FloatValue(float.Parse(context.FLOAT().GetText(), CultureInfo.InvariantCulture));
     }
 
     //VisitRelational
