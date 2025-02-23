@@ -65,6 +65,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             FloatValue f => f.Value.ToString(),
             StringValue s => s.Value,
             BoolValue b => b.Value.ToString(),
+            RuneValue r => ((int)r.Value).ToString(),
             VoidValue v => "void",
             _ => throw new Exception("Invalid operation")
         };
@@ -206,8 +207,22 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
 
     //VisitString
     public override ValueWrapper VisitString(LanguageParser.StringContext context) {
-    return new StringValue(context.STRING().GetText());
+        string text = context.STRING().GetText();
+        text = text.Replace("\"", "");
+        return new StringValue(text);
     }
+
+    //VisitRune
+public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
+    string text = context.RUNE().GetText();
+    if (text.Length != 3) {
+        throw new Exception("Invalid rune");
+    } 
+    // Acceder directamente al carácter, sabiendo que es 'x'
+    char rune = text[1]; // Esto es correcto si text es de longitud 3.
+    return new RuneValue(rune);
+}
+
 
     //VisitBlockStmt
     public override ValueWrapper VisitBlockStmt(LanguageParser.BlockStmtContext context) {

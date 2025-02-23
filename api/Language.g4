@@ -24,6 +24,7 @@ expr:
 	| FLOAT							# Float
 	| STRING						# String			
 	| INT							# Int
+	| RUNE							# Rune
 	| ID							# Identifier
 	| '(' expr ')'					# Parens;
 
@@ -34,6 +35,7 @@ BOOL: 'true'
 	| 'false';
 FLOAT: [0-9]+'.'[0-9]+;
 STRING: '"' ~'"'* '"';
+RUNE: '\'' (~['\\] | '\\' .) '\'';
 WS: [ \t\r\n]+ -> skip;
 ID: [a-zA-Z]+;
 COMMENT
