@@ -174,7 +174,6 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         };
     }
 
-
     //VisitFloat
     public override ValueWrapper VisitFloat(LanguageParser.FloatContext context) {
         return new FloatValue(float.Parse(context.FLOAT().GetText(), CultureInfo.InvariantCulture));
@@ -229,7 +228,6 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         };
     }
 
-
     //VisitBoolean
     public override ValueWrapper VisitBoolean(LanguageParser.BooleanContext context) {
         // Obtiene el texto del valor booleano (true o false)
@@ -238,7 +236,6 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         // Retorna un BoolValue basado en el texto
         return new BoolValue(boolValue.Equals("true", StringComparison.OrdinalIgnoreCase));
     }
-
 
     //VisitString
     public override ValueWrapper VisitString(LanguageParser.StringContext context) {
@@ -257,7 +254,6 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
     char rune = text[1]; // Esto es correcto si text es de longitud 3.
     return new RuneValue(rune);
 }
-
 
     //VisitBlockStmt
     public override ValueWrapper VisitBlockStmt(LanguageParser.BlockStmtContext context) {
@@ -292,7 +288,7 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         if (condition is not BoolValue) {
             throw new Exception("Invalid condition");
         }
-        
+
         while ((condition as BoolValue).Value) {
             Visit(context.stmt());
             condition = Visit(context.expr());
@@ -302,5 +298,88 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         }
         return defaultValue;
     }
+
+    //VisitAddSubAssign
+    public override ValueWrapper VisitAddSubAssign(LanguageParser.AddSubAssignContext context) {
+    string id = context.ID().GetText();
+
+    // Verificar si la variable existe en el entorno
+    if (currentEnvironment.GetVariable(id) == null) {
+        throw new Exception("Variable not found");
+    }
+
+    // Obtener el valor actual de la variable
+    ValueWrapper currentVariable = currentEnvironment.GetVariable(id);
+
+    // Evaluar la expresión
+    ValueWrapper valueToAdd = Visit(context.expr());
+    
+    // Validar tipos
+    if (!(valueToAdd is IntValue || valueToAdd is FloatValue) || 
+        !(currentVariable is IntValue || currentVariable is FloatValue)) {
+        throw new Exception("Invalid operation");
+    }
+
+    // Realizar la operación
+    var op = context.op.Text;
+    if (op == "+=") {
+        ValueWrapper newValue;
+
+        // Manejar la suma para IntValue
+        if (currentVariable is IntValue currentInt && valueToAdd is IntValue addInt) {
+            newValue = new IntValue(currentInt.Value + addInt.Value);
+        }
+        // Manejar la suma para FloatValue
+        else if (currentVariable is FloatValue currentFloat && valueToAdd is FloatValue addFloat) {
+            newValue = new FloatValue(currentFloat.Value + addFloat.Value);
+        }
+        // Manejar la suma entre IntValue y FloatValue
+        else if (currentVariable is IntValue intVar && valueToAdd is FloatValue floatValue) {
+            newValue = new FloatValue(intVar.Value + floatValue.Value);
+        }
+        else if (currentVariable is FloatValue floatVar && valueToAdd is IntValue intValue) {
+            newValue = new FloatValue(floatVar.Value + intValue.Value);
+        }
+        else {
+            throw new Exception("Invalid types for addition");
+        }
+
+        // Actualizar la variable en el entorno
+        currentEnvironment.AssignVariable(id, newValue);
+        
+        // Devolver el nuevo valor
+        return newValue;
+    } else if (op == "-=") {
+        // Lógica para -= (similar a +=)
+        ValueWrapper newValue;
+
+        // Manejar la resta para IntValue
+        if (currentVariable is IntValue currentInt && valueToAdd is IntValue subtractInt) {
+            newValue = new IntValue(currentInt.Value - subtractInt.Value);
+        }
+        // Manejar la resta para FloatValue
+        else if (currentVariable is FloatValue currentFloat && valueToAdd is FloatValue subtractFloat) {
+            newValue = new FloatValue(currentFloat.Value - subtractFloat.Value);
+        }
+        // Manejar la resta entre IntValue y FloatValue
+        else if (currentVariable is IntValue intVar && valueToAdd is FloatValue floatValue) {
+            newValue = new FloatValue(intVar.Value - floatValue.Value);
+        }
+        else if (currentVariable is FloatValue floatVar && valueToAdd is IntValue intValue) {
+            newValue = new FloatValue(floatVar.Value - intValue.Value);
+        }
+        else {
+            throw new Exception("Invalid types for subtraction");
+        }
+
+        // Actualizar la variable en el entorno
+        currentEnvironment.AssignVariable(id, newValue);
+        
+        // Devolver el nuevo valor
+        return newValue;
+    }
+
+    throw new Exception("Invalid operator: " + op);
+}
 }
 

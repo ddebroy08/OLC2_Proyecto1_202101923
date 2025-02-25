@@ -254,6 +254,18 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitNegate([NotNull] LanguageParser.NegateContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>AddSubAssign</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterAddSubAssign([NotNull] LanguageParser.AddSubAssignContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>AddSubAssign</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitAddSubAssign([NotNull] LanguageParser.AddSubAssignContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>Boolean</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// </summary>

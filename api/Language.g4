@@ -18,6 +18,7 @@ expr:
 	'-' expr						# Negate
 	| expr op = ('*' | '/' | '%') expr	# MulDiv
 	| expr op = ('+' | '-') expr	# AddSub
+	| ID op = ('+=' | '-=') expr 	# AddSubAssign
 	| expr op = ('>' | '<' | '>=' | '<=') expr # Relational
 	| expr op = ('==' | '!=') expr 	# Equalitys
 	| ID '=' expr					# Assign

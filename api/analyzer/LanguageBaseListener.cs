@@ -297,6 +297,20 @@ public partial class LanguageBaseListener : ILanguageListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitNegate([NotNull] LanguageParser.NegateContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>AddSubAssign</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterAddSubAssign([NotNull] LanguageParser.AddSubAssignContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>AddSubAssign</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitAddSubAssign([NotNull] LanguageParser.AddSubAssignContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by the <c>Boolean</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
