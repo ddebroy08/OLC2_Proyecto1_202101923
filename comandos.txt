@@ -7,3 +7,28 @@ dotnet watch run
 FRONT
 Next React
 npx create-next-app@latest
+
+
+
+
+    public override ValueWrapper VisitMulDiv(LanguageParser.MulDivContext context)
+    {
+        ValueWrapper left = Visit(context.expr(0));
+        ValueWrapper right = Visit(context.expr(1));
+        var op = context.op.Text;
+
+        return (left, right, op) switch {
+            // MULTIPLICACIÓN
+            (IntValue l, IntValue r, "*") => new IntValue(l.Value * r.Value), // int * int = int
+            (FloatValue l, FloatValue r, "*") => new FloatValue(l.Value * r.Value), // float * float = float
+            (IntValue l, FloatValue r, "*") => new FloatValue((float)l.Value * r.Value), // int * float = float
+            (FloatValue l, IntValue r, "*") => new FloatValue(l.Value * (float)r.Value), // float * int = float
+            // DIVISIÓN
+            (IntValue l, IntValue r, "/") => new IntValue(l.Value / r.Value), // int / int = int
+            (FloatValue l, FloatValue r, "/") => new FloatValue(l.Value / r.Value), // float / float = float
+            (IntValue l, FloatValue r, "/") => new FloatValue((float)l.Value / r.Value), // int / float = float
+            (FloatValue l, IntValue r, "/") => new FloatValue(l.Value / (float)r.Value), // float / int = float
+            _ => throw new Exception("Invalid operation")
+        };
+
+    }

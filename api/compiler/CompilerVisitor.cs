@@ -24,8 +24,25 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     {
         string id = context.ID().GetText();
         string type = context.Types().GetText(); // Obtener el tipo declarado
-        ValueWrapper value = Visit(context.expr());
+        ValueWrapper value;
 
+        if(context.expr() != null)
+        {
+            value = Visit(context.expr());
+        }
+        else
+        {
+            // Inicializar con un valor por defecto
+            value = type switch
+            {
+                "int" => new IntValue(0),
+                "float64" => new FloatValue(0),
+                "string" => new StringValue(""),
+                "bool" => new BoolValue(false),
+                "rune" => new RuneValue('x'),
+                _ => throw new Exception("Invalid type")
+            };
+        }
         // Validar el tipo
         if (!IsValidType(value, type))
         {
@@ -111,11 +128,24 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         ValueWrapper right = Visit(context.expr(1));
         var op = context.op.Text;
 
+        if (op == "/" && ((right is IntValue i && i.Value == 0) || (right is FloatValue f && f.Value == 0.0)))
+    {
+        Console.WriteLine("Warning: Division by zero detected. Returning default value.");
+        return op == "/" ? new FloatValue(float.PositiveInfinity) : new IntValue(0); 
+    }
+
         return (left, right, op) switch {
-            (IntValue l, IntValue r, "*") => new IntValue(l.Value * r.Value),
-            (IntValue l, IntValue r, "/") => new IntValue(l.Value / r.Value),
-            (FloatValue l, FloatValue r, "*") => new FloatValue(l.Value * r.Value),
-            (FloatValue l, FloatValue r, "/") => new FloatValue(l.Value / r.Value),
+            // MULTIPLICACIÓN
+            (IntValue l, IntValue r, "*") => new IntValue(l.Value * r.Value), // int * int = int
+            (FloatValue l, FloatValue r, "*") => new FloatValue(l.Value * r.Value), // float * float = float
+            (IntValue l, FloatValue r, "*") => new FloatValue((float)l.Value * r.Value), // int * float = float
+            (FloatValue l, IntValue r, "*") => new FloatValue(l.Value * (float)r.Value), // float * int = float
+            // DIVISIÓN
+            (IntValue l, IntValue r, "/") => new IntValue(l.Value / r.Value), // int / int = int
+            (FloatValue l, FloatValue r, "/") => new FloatValue(l.Value / r.Value), // float / float = float
+            (IntValue l, FloatValue r, "/") => new FloatValue((float)l.Value / r.Value), // int / float = float
+            (FloatValue l, IntValue r, "/") => new FloatValue(l.Value / (float)r.Value), // float / int = float
+            (IntValue l, IntValue r, "%") => new IntValue(l.Value % r.Value), // int % int = int
             _ => throw new Exception("Invalid operation")
         };
 
@@ -129,13 +159,17 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
 
         var op = context.op.Text;
         return (left, right, op) switch {
-            (IntValue l, IntValue r, "+") => new IntValue(l.Value + r.Value),
-            (IntValue l, IntValue r, "-") => new IntValue(l.Value - r.Value),
-            (FloatValue l, FloatValue r, "+") => new FloatValue(l.Value + r.Value),
-            (FloatValue l, FloatValue r, "-") => new FloatValue(l.Value - r.Value),
+            (IntValue l, IntValue r, "+") => new IntValue(l.Value + r.Value), // int + int = int
+            (IntValue l, IntValue r, "-") => new IntValue(l.Value - r.Value), // int - int = int
+            (FloatValue l, FloatValue r, "+") => new FloatValue(l.Value + r.Value), // float + float = float
+            (FloatValue l, FloatValue r, "-") => new FloatValue(l.Value - r.Value), // float - float = float
+            (FloatValue l, IntValue r, "+") => new FloatValue(l.Value + (float)r.Value), // float + int = float
+            (IntValue l, FloatValue r, "+") => new FloatValue((float)l.Value + r.Value), // int + float = float
+            (IntValue l, FloatValue r, "-") => new FloatValue((float)l.Value - r.Value), // int - float = float
+            (FloatValue l, IntValue r, "-") => new FloatValue(l.Value - (float)r.Value), // float - int = float
             (StringValue l, StringValue r, "+") => new StringValue(l.Value + r.Value),
-            (IntValue l, StringValue r, "+") => new StringValue(l.Value.ToString() + r.Value),
-            (StringValue l, IntValue r, "+") => new StringValue(l.Value + r.Value.ToString()),
+            //(IntValue l, StringValue r, "+") => new StringValue(l.Value.ToString() + r.Value),
+            //(StringValue l, IntValue r, "+") => new StringValue(l.Value + r.Value.ToString()),
             _ => throw new Exception("Invalid operation")
         };
     }
@@ -246,6 +280,25 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
             Visit(context.stmt(0));
         } else if (context.stmt().Length > 1) {
             Visit(context.stmt(1));
+        }
+        return defaultValue;
+    }
+
+
+    //VisitWhileStmt
+    public override ValueWrapper VisitWhileStmt(LanguageParser.WhileStmtContext context) {
+        ValueWrapper condition = Visit(context.expr());
+
+        if (condition is not BoolValue) {
+            throw new Exception("Invalid condition");
+        }
+        
+        while ((condition as BoolValue).Value) {
+            Visit(context.stmt());
+            condition = Visit(context.expr());
+            if (condition is not BoolValue) {
+                throw new Exception("Invalid condition");
+            }
         }
         return defaultValue;
     }

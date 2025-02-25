@@ -110,6 +110,18 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitIfStmt([NotNull] LanguageParser.IfStmtContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>WhileStmt</c>
+	/// labeled alternative in <see cref="LanguageParser.stmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterWhileStmt([NotNull] LanguageParser.WhileStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>WhileStmt</c>
+	/// labeled alternative in <see cref="LanguageParser.stmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitWhileStmt([NotNull] LanguageParser.WhileStmtContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>Equalitys</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// </summary>

@@ -4,18 +4,19 @@ program: dcl*;
 
 dcl: varDcl | stmt;
 
-varDcl: 'var' ID Types '=' expr ';';
+varDcl: 'var' ID Types ('=' expr)? ';';
 
 stmt: 
 	expr ';' # ExprStmt 
 	| 'fmt.Println(' expr ')' ';' # PrintStmt
 	|'{' dcl* '}' # BlockStmt
-	| 'if' '(' expr ')' stmt ('else' stmt)? # IfStmt;
+	| 'if' '(' expr ')' stmt ('else' stmt)? # IfStmt
+	| 'while' '(' expr ')' stmt # WhileStmt;
 
 
 expr:
 	'-' expr						# Negate
-	| expr op = ('*' | '/') expr	# MulDiv
+	| expr op = ('*' | '/' | '%') expr	# MulDiv
 	| expr op = ('+' | '-') expr	# AddSub
 	| expr op = ('>' | '<' | '>=' | '<=') expr # Relational
 	| expr op = ('==' | '!=') expr 	# Equalitys

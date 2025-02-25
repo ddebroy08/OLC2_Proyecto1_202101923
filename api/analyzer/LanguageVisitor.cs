@@ -79,6 +79,13 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitIfStmt([NotNull] LanguageParser.IfStmtContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>WhileStmt</c>
+	/// labeled alternative in <see cref="LanguageParser.stmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitWhileStmt([NotNull] LanguageParser.WhileStmtContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>Equalitys</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// </summary>
