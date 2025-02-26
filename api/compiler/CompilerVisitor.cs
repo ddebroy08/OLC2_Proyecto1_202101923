@@ -186,17 +186,59 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         var op = context.op.Text;
 
         return (left, right, op) switch {
-            (IntValue l, IntValue r, "<") => new BoolValue(l.Value < r.Value),
+            // int[>,<,>=,<=] int
+            (IntValue l, IntValue r, "<") => new BoolValue(l.Value < r.Value), 
             (IntValue l, IntValue r, ">") => new BoolValue(l.Value > r.Value),
             (IntValue l, IntValue r, "<=") => new BoolValue(l.Value <= r.Value),
             (IntValue l, IntValue r, ">=") => new BoolValue(l.Value >= r.Value),
+            // float[>,<,>=,<=] float
             (FloatValue l, FloatValue r, "<") => new BoolValue(l.Value < r.Value),
             (FloatValue l, FloatValue r, ">") => new BoolValue(l.Value > r.Value),
             (FloatValue l, FloatValue r, "<=") => new BoolValue(l.Value <= r.Value),
             (FloatValue l, FloatValue r, ">=") => new BoolValue(l.Value >= r.Value),
+            // int[>,<,>=,<=] float
+            (IntValue l, FloatValue r, "<") => new BoolValue(l.Value < r.Value),
+            (IntValue l, FloatValue r, ">") => new BoolValue(l.Value > r.Value),
+            (IntValue l, FloatValue r, "<=") => new BoolValue(l.Value <= r.Value),
+            (IntValue l, FloatValue r, ">=") => new BoolValue(l.Value >= r.Value),
+            // float[>,<,>=,<=] int
+            (FloatValue l, IntValue r, "<") => new BoolValue(l.Value < r.Value),
+            (FloatValue l, IntValue r, ">") => new BoolValue(l.Value > r.Value),
+            (FloatValue l, IntValue r, "<=") => new BoolValue(l.Value <= r.Value),
+            (FloatValue l, IntValue r, ">=") => new BoolValue(l.Value >= r.Value),
+            // rune [>,<,>=,<=] rune
+            (RuneValue l, RuneValue r, "<") => new BoolValue(l.Value < r.Value),
+            (RuneValue l, RuneValue r, ">") => new BoolValue(l.Value > r.Value),
+            (RuneValue l, RuneValue r, "<=") => new BoolValue(l.Value <= r.Value),
+            (RuneValue l, RuneValue r, ">=") => new BoolValue(l.Value >= r.Value),
             _ => throw new Exception("Invalid operation")
         };
     }
+
+    //VisitLogical
+    public override ValueWrapper VisitLogical(LanguageParser.LogicalContext context) {
+        ValueWrapper left = Visit(context.expr(0));
+        ValueWrapper right = Visit(context.expr(1));
+        var op = context.op.Text;
+
+        return (left, right, op) switch {
+            (BoolValue l, BoolValue r, "&&") => new BoolValue(l.Value && r.Value),
+            (BoolValue l, BoolValue r, "||") => new BoolValue(l.Value || r.Value),
+            _ => throw new Exception("Invalid operation")
+        };
+    }
+
+    // VisitNot
+    public override ValueWrapper VisitNot(LanguageParser.NotContext context)
+    {
+        ValueWrapper value = Visit(context.expr());
+        if (value is not BoolValue)
+        {
+            throw new Exception("Invalid operation");
+        }
+        return new BoolValue(!(value as BoolValue).Value);
+    }
+    
     //VisitAssign
     public override ValueWrapper VisitAssign(LanguageParser.AssignContext context) {
         string id = context.ID().GetText();
@@ -204,8 +246,8 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         currentEnvironment.AssignVariable(id, value);
         return defaultValue;
     }
+    
     //VisitEqualitys
-
         public override ValueWrapper VisitEqualitys(LanguageParser.EqualitysContext context) {
         ValueWrapper left = Visit(context.expr(0));
         ValueWrapper right = Visit(context.expr(1));
@@ -224,6 +266,8 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             (StringValue l, StringValue r, "!=") => new BoolValue(l.Value != r.Value),
             (BoolValue l, BoolValue r, "==") => new BoolValue(l.Value == r.Value),
             (BoolValue l, BoolValue r, "!=") => new BoolValue(l.Value != r.Value),
+            (RuneValue l, RuneValue r, "==") => new BoolValue(l.Value == r.Value),
+            (RuneValue l, RuneValue r, "!=") => new BoolValue(l.Value != r.Value),
             _ => throw new Exception("Invalid operation")
         };
     }

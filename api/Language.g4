@@ -16,11 +16,13 @@ stmt:
 
 expr:
 	'-' expr						# Negate
+	| '!' expr						# Not
 	| expr op = ('*' | '/' | '%') expr	# MulDiv
 	| expr op = ('+' | '-') expr	# AddSub
 	| ID op = ('+=' | '-=') expr 	# AddSubAssign
 	| expr op = ('>' | '<' | '>=' | '<=') expr # Relational
 	| expr op = ('==' | '!=') expr 	# Equalitys
+	| expr op = ('&&' | '||') expr 	# Logical
 	| ID '=' expr					# Assign
 	| BOOL							# Boolean
 	| FLOAT							# Float
@@ -32,14 +34,20 @@ expr:
 
 
 Types: 'int' | 'float64' | 'string' | 'bool' | 'rune';
+
+// Tipos de datos
 INT: [0-9]+;
 BOOL: 'true'
 	| 'false';
 FLOAT: [0-9]+'.'[0-9]+;
 STRING: '"' ~'"'* '"';
 RUNE: '\'' (~['\\] | '\\' .) '\'';
-WS: [ \t\r\n]+ -> skip;
-ID: [a-zA-Z]+;
+
+escapeSequence: '\\' ('"' | '\\' | 'n' | 'r' | 't');
+
+
+WS: [ \t\r\n]+ -> skip; // Ignorar espacios en blanco
+ID: [a-zA-Z]+; // Identificador
 COMMENT
     : '//' ~[\r\n]*                // Comentarios de una sola línea
     | '/*' '*/' // Comentarios de múltiples líneas

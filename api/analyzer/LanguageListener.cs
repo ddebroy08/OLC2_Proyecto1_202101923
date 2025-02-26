@@ -182,6 +182,18 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitRelational([NotNull] LanguageParser.RelationalContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>Logical</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterLogical([NotNull] LanguageParser.LogicalContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Logical</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitLogical([NotNull] LanguageParser.LogicalContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>String</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// </summary>
@@ -217,6 +229,18 @@ public interface ILanguageListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitFloat([NotNull] LanguageParser.FloatContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>Not</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterNot([NotNull] LanguageParser.NotContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Not</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitNot([NotNull] LanguageParser.NotContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>Identifier</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.

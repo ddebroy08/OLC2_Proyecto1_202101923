@@ -9,3 +9,50 @@ agregar a compiler visitor los cambios de la gramática
 crear clase valueWrapper en la carpeta compiler
 
 en compilervisitor cambiar los tipos int por valueWrapper 
+
+
+
+
+
+
+ENTRADAS PROBADAS
+
+-> IGUALDAD Y DESIGUALDAD 
+    fmt.Println("int");
+    fmt.Println(1 == 1);        
+    fmt.Println(1 != 1);        
+
+    fmt.Println("float");
+    fmt.Println(13.0 == 13.0);  
+    fmt.Println(0.001 != 0.001); 
+
+    fmt.Println("FLOAT")
+    fmt.Println(35.0 == 35);    
+    fmt.Println(98.0 != 98);     
+
+    fmt.Println("Booleans");
+    fmt.Println(true == false);  
+    fmt.Println(true != false);   
+
+    fmt.Println("String");
+    fmt.Println("ho" == "ha");   
+    fmt.Println("ho" != "ho");    
+
+    fmt.Println("rune");
+    fmt.Println('a' == 'a');      
+    fmt.Println('H' != 'h');  
+
+--------------------------------
+
+-> RELACIONALES
+
+    // int
+    fmt.Println(1 <= 1);
+    // float
+    fmt.Println(1.0 <= 1.0);
+    // int y float
+    fmt.Println(1 <= 1.0);
+    // float e int
+    fmt.Println(1.0 <= 1.0);
+    // rune
+    fmt.Println('a' <= 'a');

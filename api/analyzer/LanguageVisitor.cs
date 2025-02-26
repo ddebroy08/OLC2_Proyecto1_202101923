@@ -121,6 +121,13 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitRelational([NotNull] LanguageParser.RelationalContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>Logical</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitLogical([NotNull] LanguageParser.LogicalContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>String</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// </summary>
@@ -141,6 +148,13 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitFloat([NotNull] LanguageParser.FloatContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>Not</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitNot([NotNull] LanguageParser.NotContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>Identifier</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
