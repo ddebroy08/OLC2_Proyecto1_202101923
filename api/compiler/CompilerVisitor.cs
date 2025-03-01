@@ -40,16 +40,24 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
                 "string" => new StringValue(""),
                 "bool" => new BoolValue(false),
                 "rune" => new RuneValue('x'),
-                _ => throw new Exception("Invalid type")
+                _ => throw new SemanticError("Invalid type", context.Start)
             };
         }
         // Validar el tipo
         if (!IsValidType(value, type))
         {
-            throw new Exception($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {type}");
+            throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {type}", context.Start);
         }
 
-        currentEnvironment.DeclareVariable(id, value);
+        currentEnvironment.DeclareVariable(id, value, context.Start);
+        return defaultValue;
+    }
+
+    //VisitShortVarDcl
+    public override ValueWrapper VisitShortVarDcl(LanguageParser.ShortVarDclContext context) {
+        string id = context.ID().GetText();
+        ValueWrapper value = Visit(context.expr());
+        currentEnvironment.DeclareVariable(id, value, context.Start);
         return defaultValue;
     }
 
@@ -85,7 +93,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             BoolValue b => b.Value.ToString(),
             RuneValue r => ((int)r.Value).ToString(),
             VoidValue v => "void",
-            _ => throw new Exception("Invalid operation")
+            _ => throw new SemanticError("Invalid operation", context.Start)
         };
         output += "\n";
         return defaultValue;
@@ -95,7 +103,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     public override ValueWrapper VisitIdentifier(LanguageParser.IdentifierContext context)
     {
         string id = context.ID().GetText();
-        return currentEnvironment.GetVariable(id);
+        return currentEnvironment.GetVariable(id, context.Start);
     }
 
     // VisitParens
@@ -111,7 +119,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         return value switch {
             IntValue i => new IntValue(-i.Value),
             FloatValue f => new FloatValue(-f.Value),
-            _ => throw new Exception("Invalid operation")
+            _ => throw new SemanticError("Invalid operation", context.Start)
         };
     }
 
@@ -146,7 +154,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             (IntValue l, FloatValue r, "/") => new FloatValue((float)l.Value / r.Value), // int / float = float
             (FloatValue l, IntValue r, "/") => new FloatValue(l.Value / (float)r.Value), // float / int = float
             (IntValue l, IntValue r, "%") => new IntValue(l.Value % r.Value), // int % int = int
-            _ => throw new Exception("Invalid operation")
+            _ => throw new SemanticError("Invalid operation", context.Start)
         };
 
     }
@@ -170,7 +178,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             (StringValue l, StringValue r, "+") => new StringValue(l.Value + r.Value),
             //(IntValue l, StringValue r, "+") => new StringValue(l.Value.ToString() + r.Value),
             //(StringValue l, IntValue r, "+") => new StringValue(l.Value + r.Value.ToString()),
-            _ => throw new Exception("Invalid operation")
+            _ => throw new SemanticError("Invalid operation", context.Start)
         };
     }
 
@@ -211,7 +219,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             (RuneValue l, RuneValue r, ">") => new BoolValue(l.Value > r.Value),
             (RuneValue l, RuneValue r, "<=") => new BoolValue(l.Value <= r.Value),
             (RuneValue l, RuneValue r, ">=") => new BoolValue(l.Value >= r.Value),
-            _ => throw new Exception("Invalid operation")
+            _ => throw new SemanticError("Invalid operation", context.Start)
         };
     }
 
@@ -224,7 +232,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         return (left, right, op) switch {
             (BoolValue l, BoolValue r, "&&") => new BoolValue(l.Value && r.Value),
             (BoolValue l, BoolValue r, "||") => new BoolValue(l.Value || r.Value),
-            _ => throw new Exception("Invalid operation")
+            _ => throw new SemanticError("Invalid operation", context.Start)
         };
     }
 
@@ -234,7 +242,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         ValueWrapper value = Visit(context.expr());
         if (value is not BoolValue)
         {
-            throw new Exception("Invalid operation");
+            throw new SemanticError("Invalid operation", context.Start);
         }
         return new BoolValue(!(value as BoolValue).Value);
     }
@@ -243,7 +251,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     public override ValueWrapper VisitAssign(LanguageParser.AssignContext context) {
         string id = context.ID().GetText();
         ValueWrapper value = Visit(context.expr());
-        currentEnvironment.AssignVariable(id, value);
+        currentEnvironment.AssignVariable(id, value, context.Start);
         return defaultValue;
     }
     
@@ -268,7 +276,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             (BoolValue l, BoolValue r, "!=") => new BoolValue(l.Value != r.Value),
             (RuneValue l, RuneValue r, "==") => new BoolValue(l.Value == r.Value),
             (RuneValue l, RuneValue r, "!=") => new BoolValue(l.Value != r.Value),
-            _ => throw new Exception("Invalid operation")
+            _ => throw new SemanticError("Invalid operation", context.Start)
         };
     }
 
@@ -283,16 +291,37 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
 
     //VisitString
     public override ValueWrapper VisitString(LanguageParser.StringContext context) {
-        string text = context.STRING().GetText();
-        text = text.Replace("\"", "");
-        return new StringValue(text);
+    if (context.STRING() == null) {
+        throw new SemanticError("Invalid string", context.Start);
     }
+
+    string text = context.STRING().GetText();
+
+    // Verificar que la cadena tenga al menos dos caracteres (para las comillas)
+    if (text.Length < 2) {
+        throw new SemanticError("Invalid string format", context.Start);
+    }
+
+    // Quitar las comillas dobles al inicio y al final
+    text = text.Substring(1, text.Length - 2);
+
+    // Reemplazar caracteres de escape correctamente
+    text = ReplaceEscapeSequences(text);
+
+    return new StringValue(text);
+}
+
+    private string ReplaceEscapeSequences(string text) {
+        // Usamos expresiones regulares para procesar correctamente las secuencias de escape
+        return System.Text.RegularExpressions.Regex.Unescape(text);
+    }
+
 
     //VisitRune
 public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
     string text = context.RUNE().GetText();
     if (text.Length != 3) {
-        throw new Exception("Invalid rune");
+        throw new SemanticError("Invalid rune", context.Start);
     } 
     // Acceder directamente al carácter, sabiendo que es 'x'
     char rune = text[1]; // Esto es correcto si text es de longitud 3.
@@ -314,7 +343,7 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
     public override ValueWrapper VisitIfStmt(LanguageParser.IfStmtContext context) {
         ValueWrapper condition = Visit(context.expr());
         if (condition is not BoolValue) {
-            throw new Exception("Invalid condition");
+            throw new SemanticError("Invalid condition", context.Start);
         }
         if ((condition as BoolValue).Value) {
             Visit(context.stmt(0));
@@ -330,30 +359,96 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         ValueWrapper condition = Visit(context.expr());
 
         if (condition is not BoolValue) {
-            throw new Exception("Invalid condition");
+            throw new SemanticError("Invalid condition", context.Start);
         }
 
         while ((condition as BoolValue).Value) {
             Visit(context.stmt());
             condition = Visit(context.expr());
             if (condition is not BoolValue) {
-                throw new Exception("Invalid condition");
+                throw new SemanticError("Invalid condition", context.Start);
             }
         }
         return defaultValue;
     }
+
+    // VisitForStmt
+    public override ValueWrapper VisitForStmt(LanguageParser.ForStmtContext context)
+    {
+        Environment previousEnvironment = currentEnvironment;
+        currentEnvironment = new Environment(previousEnvironment);
+
+        ValueWrapper condition = Visit(context.expr());
+
+        if (condition is not BoolValue)
+        {
+            throw new SemanticError("Invalid condition", context.Start);
+        }
+
+        while ((condition as BoolValue).Value)
+        {
+            Visit(context.stmt());
+            condition = Visit(context.expr());
+            if (condition is not BoolValue)
+            {
+
+                throw new SemanticError("Invalid condition", context.Start);
+            }
+        }
+
+        currentEnvironment = previousEnvironment;
+        return defaultValue;
+    }
+
+        //VisitForStmtIni
+    public override ValueWrapper VisitForStmtIni(LanguageParser.ForStmtIniContext context) {
+        Environment previousEnvironment = currentEnvironment;
+        currentEnvironment = new Environment(previousEnvironment);
+
+        // Manejar inicialización (puede ser shortVarDcl o expr)
+        if (context.forInit().shortVarDcl() != null) {
+            Visit(context.forInit().shortVarDcl());
+        } else {
+            Visit(context.forInit().expr());
+        }
+
+        VisitForBody(context);
+
+        currentEnvironment = previousEnvironment; // Restaurar el entorno
+        return defaultValue;
+    }
+
+    public void VisitForBody(LanguageParser.ForStmtIniContext context) {
+        ValueWrapper condition = Visit(context.expr(0)); // Condición del for
+
+        while (condition is BoolValue boolCondition && boolCondition.Value) {
+            try {
+                Visit(context.stmt()); // Ejecutar el cuerpo del for
+                Visit(context.expr(1)); // Ejecutar la actualización
+                condition = Visit(context.expr(0)); // Reevaluar la condición
+            } catch (BreakException) {
+                break; // Salir del bucle si hay un "break"
+            } catch (ContinueException) {
+                Visit(context.expr(1)); // Ejecutar la actualización antes de continuar
+                condition = Visit(context.expr(0)); // Reevaluar la condición después del continue
+            }
+        }
+    }
+
+
+    //VisitForInit
 
     //VisitAddSubAssign
     public override ValueWrapper VisitAddSubAssign(LanguageParser.AddSubAssignContext context) {
     string id = context.ID().GetText();
 
     // Verificar si la variable existe en el entorno
-    if (currentEnvironment.GetVariable(id) == null) {
-        throw new Exception("Variable not found");
+    if (currentEnvironment.GetVariable(id, context.Start) == null) {
+        throw new SemanticError("Variable not found", context.Start);
     }
 
     // Obtener el valor actual de la variable
-    ValueWrapper currentVariable = currentEnvironment.GetVariable(id);
+    ValueWrapper currentVariable = currentEnvironment.GetVariable(id, context.Start);
 
     // Evaluar la expresión
     ValueWrapper valueToAdd = Visit(context.expr());
@@ -361,7 +456,7 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
     // Validar tipos
     if (!(valueToAdd is IntValue || valueToAdd is FloatValue) || 
         !(currentVariable is IntValue || currentVariable is FloatValue)) {
-        throw new Exception("Invalid operation");
+        throw new SemanticError("Invalid operation", context.Start);
     }
 
     // Realizar la operación
@@ -385,11 +480,11 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
             newValue = new FloatValue(floatVar.Value + intValue.Value);
         }
         else {
-            throw new Exception("Invalid types for addition");
+            throw new SemanticError("Invalid types for addition", context.Start);
         }
 
         // Actualizar la variable en el entorno
-        currentEnvironment.AssignVariable(id, newValue);
+        currentEnvironment.AssignVariable(id, newValue, context.Start);
         
         // Devolver el nuevo valor
         return newValue;
@@ -413,17 +508,37 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
             newValue = new FloatValue(floatVar.Value - intValue.Value);
         }
         else {
-            throw new Exception("Invalid types for subtraction");
+            throw new SemanticError("Invalid types for subtraction", context.Start);
         }
 
         // Actualizar la variable en el entorno
-        currentEnvironment.AssignVariable(id, newValue);
+        currentEnvironment.AssignVariable(id, newValue, context.Start);
         
         // Devolver el nuevo valor
         return newValue;
     }
 
-    throw new Exception("Invalid operator: " + op);
-}
+    throw new SemanticError("Invalid operator: " + op, context.Start);
+    }
+
+    //VisitBreakStmt
+    public override ValueWrapper VisitBreakStmt(LanguageParser.BreakStmtContext context) {
+        throw new BreakException();
+
+    }
+    //VisitContinueStmt
+    public override ValueWrapper VisitContinueStmt(LanguageParser.ContinueStmtContext context) {
+        throw new ContinueException();
+    }
+    //VisitReturnStmt
+    public override ValueWrapper VisitReturnStmt(LanguageParser.ReturnStmtContext context) {
+        ValueWrapper value = defaultValue;
+
+        if (context.expr() != null) {
+            value = Visit(context.expr());
+        }
+        
+        throw new ReturnException(value);
+    }
 }
 

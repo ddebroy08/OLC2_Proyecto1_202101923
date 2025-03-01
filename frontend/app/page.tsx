@@ -6,23 +6,31 @@ const API_URL = 'http://localhost:5120';
 
 export default function Home() {
   const [code, setCode] = useState<string>('');
+  const [error, setError] = useState<string>('');
   const [output, setOutput] = useState<string>('');
 
-  const handleExecute = () => {
-    fetch(`${API_URL}/compile`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ code }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setOutput(data.result);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
+  const handleExecute = async () => {
+    try{
+      const response = await fetch(`${API_URL}/compile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
       });
+
+      const data = await response.json();
+
+      if(!response.ok){
+        throw new Error(data.error || 'Error desconocido');
+      }
+
+      setOutput(data.result);
+      setError('');
+    } catch (err) {
+      setOutput('');
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    }
   };
 
   return (
@@ -44,6 +52,12 @@ export default function Home() {
         <div className='flex flex-col items-center justify-center'>
           <h2>Output:</h2>
           <pre>{output}</pre>
+        </div>
+      )}
+      {error && (
+        <div className='flex flex-col items-center justify-center bg-red-500 p-4 mt-6'>
+          <h2>Error:</h2>
+          <pre>{error}</pre>
         </div>
       )}
     </div>

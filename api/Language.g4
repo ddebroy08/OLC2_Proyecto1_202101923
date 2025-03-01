@@ -2,17 +2,26 @@ grammar Language;
 
 program: dcl*;
 
-dcl: varDcl | stmt;
+dcl: varDcl | stmt | shortVarDcl;
 
-varDcl: 'var' ID Types ('=' expr)? ';';
+varDcl: 'var' ID Types ('=' expr)? (';')?;
+
+shortVarDcl: ID ':=' expr (';')?;
 
 stmt: 
-	expr ';' # ExprStmt 
-	| 'fmt.Println(' expr ')' ';' # PrintStmt
+	expr (';')? # ExprStmt 
+	| 'fmt.Println(' expr ')' (';')? # PrintStmt
 	|'{' dcl* '}' # BlockStmt
 	| 'if' '(' expr ')' stmt ('else' stmt)? # IfStmt
-	| 'while' '(' expr ')' stmt # WhileStmt;
+	| 'while' '(' expr ')' stmt # WhileStmt
+	| 'for' expr  stmt  # ForStmt
+	| 'for' forInit ';' expr ';' expr stmt # ForStmtIni
+	| 'break' ';' # BreakStmt
+	| 'continue' ';' # ContinueStmt
+	| 'return' expr? ';' # ReturnStmt
+	;
 
+forInit: shortVarDcl | expr;
 
 expr:
 	'-' expr						# Negate
@@ -32,7 +41,6 @@ expr:
 	| ID							# Identifier
 	| '(' expr ')'					# Parens;
 
-
 Types: 'int' | 'float64' | 'string' | 'bool' | 'rune';
 
 // Tipos de datos
@@ -40,15 +48,13 @@ INT: [0-9]+;
 BOOL: 'true'
 	| 'false';
 FLOAT: [0-9]+'.'[0-9]+;
-STRING: '"' ~'"'* '"';
+STRING: '"' (ESC | ~["\\])* '"';
 RUNE: '\'' (~['\\] | '\\' .) '\'';
 
-escapeSequence: '\\' ('"' | '\\' | 'n' | 'r' | 't');
-
+// Secuencias de escape válidas
+fragment ESC: '\\' ['"\\nrt];
 
 WS: [ \t\r\n]+ -> skip; // Ignorar espacios en blanco
 ID: [a-zA-Z]+; // Identificador
-COMMENT
-    : '//' ~[\r\n]*                // Comentarios de una sola línea
-    | '/*' '*/' // Comentarios de múltiples líneas
-    ; 
+COMMENT : '//' ~[\r\n]*    -> skip;            // Comentarios de una sola línea
+ML_COMMENT : '/*' .*? '*/' -> skip;  // Comentarios de múltiples líneas

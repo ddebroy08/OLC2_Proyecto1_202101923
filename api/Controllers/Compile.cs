@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using analyzer;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -39,21 +40,34 @@ namespace api.Controllers
 
             var inputStream = new AntlrInputStream(request.code);
             var lexer = new LanguageLexer(inputStream);
+
+            // añadiendo errores léxicos
+            lexer.RemoveErrorListeners();
+            lexer.AddErrorListener(new LexicalErrorListener());
+
             var tokens = new CommonTokenStream(lexer);
             var parser = new LanguageParser(tokens);
 
+            parser.RemoveErrorListeners();
+            parser.AddErrorListener(new SyntaxErrorListener());
+
+            try {
             var tree = parser.program();
 
             var visitor = new CompilerVisitor();
             visitor.Visit(tree);
 
             return Ok(new { result = visitor.output });
-
-            // var walker = new ParseTreeWalker();
-            // var lister = new CompilerListerner();
-            // walker.Walk(lister, tree);
-
-            // return Ok(new { result = lister.GetResult() });
+            }
+            catch (ParseCanceledException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (SemanticError ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            
         }
 
     }
