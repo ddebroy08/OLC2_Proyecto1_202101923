@@ -84,20 +84,77 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     // VisitPrValueWrapperStmt
     public override ValueWrapper VisitPrintStmt(LanguageParser.PrintStmtContext context)
     {
-        ValueWrapper value = Visit(context.expr());
-        //output += value + "\n";
-        output += value switch {
-            IntValue i => i.Value.ToString(),
-            FloatValue f => f.Value.ToString("G", CultureInfo.InvariantCulture),
-            StringValue s => s.Value,
-            BoolValue b => b.Value.ToString(),
-            RuneValue r => ((int)r.Value).ToString(),
-            VoidValue v => "void",
-            _ => throw new SemanticError("Invalid operation", context.Start)
-        };
-        output += "\n";
+        for (int i = 0; i < context.expr().Length; i++)
+        {
+            ValueWrapper value = Visit(context.expr(i));
+
+            output += value switch {
+                IntValue iVal => iVal.Value.ToString(),
+                FloatValue fVal => fVal.Value.ToString("G", CultureInfo.InvariantCulture),
+                StringValue sVal => sVal.Value,
+                BoolValue bVal => bVal.Value.ToString(),
+                RuneValue rVal => ((int)rVal.Value).ToString(),
+                VoidValue _ => "void",
+                _ => throw new SemanticError("Invalid operation", context.Start)
+            };
+
+            // Agregar espacio entre valores excepto el último
+            if (i < context.expr().Length - 1) 
+            {
+                output += " ";
+            }
+        }
+
+        output += "\n"; // Nueva línea después de imprimir todo
         return defaultValue;
     }
+
+
+    // VisitAtoiStmt
+    public override ValueWrapper VisitAtoiStmt(LanguageParser.AtoiStmtContext context)
+    {
+        ValueWrapper value = Visit(context.expr());
+        if (value is not StringValue stringValue)
+        {
+            throw new SemanticError("Invalid operation", context.Start);
+        }
+        string text = stringValue.Value;
+
+        if (!int.TryParse(text, out int result))
+        {
+            throw new SemanticError("Invalid operation", context.Start);
+        }
+        return new IntValue(result);
+    }
+
+    //VisitParseFloatStmt
+    public override ValueWrapper VisitParseFloatStmt(LanguageParser.ParseFloatStmtContext context) {
+        ValueWrapper value = Visit(context.expr());
+        if (value is not StringValue stringValue) {
+            throw new SemanticError("Invalid operation", context.Start);
+        }
+        string text = stringValue.Value;
+
+        if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float result)) {
+            throw new SemanticError("Invalid operation", context.Start);
+        }
+        return new FloatValue(result);
+    }
+
+    //VisitTypeOfStmt
+public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext context) {
+    ValueWrapper value = Visit(context.expr());
+    string type = value switch {
+        IntValue => "int",
+        FloatValue => "float64",
+        StringValue => "string",
+        BoolValue => "bool",
+        RuneValue => "rune",
+        _ => "void"
+    };
+    
+    return new StringValue(type);
+}
 
     // VisitIdentifier
     public override ValueWrapper VisitIdentifier(LanguageParser.IdentifierContext context)
@@ -108,6 +165,12 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
 
     // VisitParens
     public override ValueWrapper VisitParens(LanguageParser.ParensContext context)
+    {
+        return Visit(context.expr());
+    }
+
+    // VisitBrackets
+    public override ValueWrapper VisitBrackets(LanguageParser.BracketsContext context)
     {
         return Visit(context.expr());
     }
@@ -430,13 +493,76 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
                 break; // Salir del bucle si hay un "break"
             } catch (ContinueException) {
                 Visit(context.expr(1)); // Ejecutar la actualización antes de continuar
-                condition = Visit(context.expr(0)); // Reevaluar la condición después del continue
+                condition = Visit(context.expr(0)); // Reevaluar la condición 
             }
         }
     }
 
-
     //VisitForInit
+
+    // VisitSwitchStmt
+    public override ValueWrapper VisitSwitchStmt(LanguageParser.SwitchStmtContext context)
+    {
+        // Crear un nuevo entorno
+        Environment previousEnvironment = currentEnvironment;
+        currentEnvironment = new Environment(previousEnvironment);
+
+        ValueWrapper switchValue = Visit(context.expr());
+        bool caseMatched = false;
+
+        foreach (var stmt in context.stmt())
+        {
+            if (stmt is LanguageParser.CaseStmtContext caseStmt)
+            {
+                caseMatched = caseMatched || VisitCaseStmt(caseStmt, switchValue);
+            }
+            else if (stmt is LanguageParser.DefaultStmtContext defaultStmt && !caseMatched)
+            {
+                VisitDefaultStmt(defaultStmt);
+                break;
+            }
+        }
+
+        // Restaurar el entorno anterior
+        currentEnvironment = previousEnvironment;
+
+        return defaultValue;
+    }
+
+// VisitCaseStmt mejorado para recibir el valor del switch
+    public bool VisitCaseStmt(LanguageParser.CaseStmtContext context, ValueWrapper switchValue)
+    {
+        ValueWrapper caseValue = Visit(context.expr());
+
+        // Comprobar que los tipos coincidan
+        if (switchValue.GetType() != caseValue.GetType())
+        {
+            throw new SemanticError("Type mismatch in switch case", context.Start);
+        }
+
+        // Si los valores coinciden, ejecutamos el bloque del `case`
+        if (switchValue.Equals(caseValue))
+        {
+            try{
+                Visit(context.stmt());
+            } catch (BreakException) {
+                return true; // Indicamos que un `case` ha sido ejecutado
+            } catch (ContinueException) {
+                throw new SemanticError("Continue is not valid in a switch case", context.Start);
+            }
+            return true; // Indicamos que un `case` ha sido ejecutado
+        }
+
+        return false; // No coincidió
+    }
+
+    // VisitDefaultStmt permanece igual
+    public override ValueWrapper VisitDefaultStmt(LanguageParser.DefaultStmtContext context)
+    {
+        Visit(context.stmt());
+        return defaultValue;
+    }
+
 
     //VisitAddSubAssign
     public override ValueWrapper VisitAddSubAssign(LanguageParser.AddSubAssignContext context) {

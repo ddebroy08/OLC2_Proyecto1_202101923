@@ -10,15 +10,18 @@ shortVarDcl: ID ':=' expr (';')?;
 
 stmt: 
 	expr (';')? # ExprStmt 
-	| 'fmt.Println(' expr ')' (';')? # PrintStmt
-	|'{' dcl* '}' # BlockStmt
+	| 'fmt.Println(' expr (',' expr)* ')' (';')? # PrintStmt
+	| '{' dcl* '}' # BlockStmt
 	| 'if' '(' expr ')' stmt ('else' stmt)? # IfStmt
 	| 'while' '(' expr ')' stmt # WhileStmt
 	| 'for' expr  stmt  # ForStmt
 	| 'for' forInit ';' expr ';' expr stmt # ForStmtIni
-	| 'break' ';' # BreakStmt
-	| 'continue' ';' # ContinueStmt
-	| 'return' expr? ';' # ReturnStmt
+	| 'switch' expr '{' stmt* '}' # SwitchStmt
+    | 'case' expr ':' stmt # CaseStmt
+    | 'default' ':' stmt # DefaultStmt
+	| 'break' (';')? # BreakStmt
+	| 'continue' (';')? # ContinueStmt
+	| 'return' expr? (';')? # ReturnStmt
 	;
 
 forInit: shortVarDcl | expr;
@@ -33,13 +36,18 @@ expr:
 	| expr op = ('==' | '!=') expr 	# Equalitys
 	| expr op = ('&&' | '||') expr 	# Logical
 	| ID '=' expr					# Assign
+	| 'strconv.Atoi(' expr ')' (';')? # AtoiStmt
+	| 'strconv.ParseFloat(' expr ')' (';')? # ParseFloatStmt
+	| 'reflect.TypeOf(' expr ')' (';')? # TypeOfStmt
 	| BOOL							# Boolean
 	| FLOAT							# Float
 	| STRING						# String			
 	| INT							# Int
 	| RUNE							# Rune
 	| ID							# Identifier
+	| '[' expr ']' (';')? 			# brackets
 	| '(' expr ')'					# Parens;
+
 
 Types: 'int' | 'float64' | 'string' | 'bool' | 'rune';
 
