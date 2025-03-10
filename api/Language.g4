@@ -2,11 +2,19 @@ grammar Language;
 
 program: dcl*;
 
-dcl: varDcl | stmt | shortVarDcl;
+dcl: varDcl | stmt | shortVarDcl | classDcl | funcDcl;
 
 varDcl: 'var' ID Types ('=' expr)? (';')?;
 
 shortVarDcl: ID ':=' expr (';')?;
+
+funcDcl: 'func' ID '(' params? ')' '{' dcl* '}';
+
+classDcl: 'class' ID '{' classBody* '}';
+
+classBody: varDcl | shortVarDcl | funcDcl;
+
+params: ID (',' ID)*;
 
 stmt: 
 	expr (';')? # ExprStmt 
@@ -27,27 +35,31 @@ stmt:
 forInit: shortVarDcl | expr;
 
 expr:
-	'-' expr						# Negate
-	| '!' expr						# Not
-	| expr op = ('*' | '/' | '%') expr	# MulDiv
-	| expr op = ('+' | '-') expr	# AddSub
-	| ID op = ('+=' | '-=') expr 	# AddSubAssign
-	| expr op = ('>' | '<' | '>=' | '<=') expr # Relational
-	| expr op = ('==' | '!=') expr 	# Equalitys
-	| expr op = ('&&' | '||') expr 	# Logical
-	| ID '=' expr					# Assign
-	| 'strconv.Atoi(' expr ')' (';')? # AtoiStmt
-	| 'strconv.ParseFloat(' expr ')' (';')? # ParseFloatStmt
-	| 'reflect.TypeOf(' expr ')' (';')? # TypeOfStmt
-	| BOOL							# Boolean
-	| FLOAT							# Float
-	| STRING						# String			
-	| INT							# Int
-	| RUNE							# Rune
-	| ID							# Identifier
-	| '[' expr ']' (';')? 			# brackets
-	| '(' expr ')'					# Parens;
+	'-' expr									# Negate
+	| '!' expr									# Not
+	| expr call+  								# Calle
+	| expr op = ('*' | '/' | '%') expr			# MulDiv
+	| expr op = ('+' | '-') expr				# AddSub
+	| ID op = ('+=' | '-=') expr 				# AddSubAssign
+	| expr op = ('>' | '<' | '>=' | '<=') expr 	# Relational
+	| expr op = ('==' | '!=') expr 				# Equalitys
+	| expr op = ('&&' | '||') expr 				# Logical
+	| ID '=' expr								# Assign
+	| 'strconv.Atoi(' expr ')' (';')? 			# AtoiStmt
+	| 'strconv.ParseFloat(' expr ')' (';')? 	# ParseFloatStmt
+	| 'reflect.TypeOf(' expr ')' (';')? 		# TypeOfStmt
+	| BOOL										# Boolean
+	| FLOAT										# Float
+	| STRING									# String			
+	| INT										# Int
+	| RUNE										# Rune
+	| 'new' ID '(' args? ')'					# New
+	| ID										# Identifier
+	| '[' expr ']' (';')? 						# brackets
+	| '(' expr ')'								# Parens;
 
+call: '(' args? ')' #FuncCall | '.' ID #Get;
+args: expr (',' expr)*;
 
 Types: 'int' | 'float64' | 'string' | 'bool' | 'rune';
 

@@ -5,9 +5,17 @@ using analyzer;
 public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
 {
 
-    private ValueWrapper defaultValue = new VoidValue();
+    public ValueWrapper defaultValue = new VoidValue();
     public string output = "";
-    private Environment currentEnvironment = new Environment(null);
+    public Environment currentEnvironment;
+
+    // Guardar funciones embebidas
+    public CompilerVisitor()
+    {
+        // Agregar funciones embebidas
+        currentEnvironment = new Environment(null);
+        Embeded.Generate(currentEnvironment);
+    }
 
     // VisitProgram
     public override ValueWrapper VisitProgram(LanguageParser.ProgramContext context)
@@ -49,7 +57,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {type}", context.Start);
         }
 
-        currentEnvironment.DeclareVariable(id, value, context.Start);
+        currentEnvironment.Declare(id, value, context.Start);
         return defaultValue;
     }
 
@@ -57,7 +65,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     public override ValueWrapper VisitShortVarDcl(LanguageParser.ShortVarDclContext context) {
         string id = context.ID().GetText();
         ValueWrapper value = Visit(context.expr());
-        currentEnvironment.DeclareVariable(id, value, context.Start);
+        currentEnvironment.Declare(id, value, context.Start);
         return defaultValue;
     }
 
@@ -95,6 +103,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
                 BoolValue bVal => bVal.Value.ToString(),
                 RuneValue rVal => ((int)rVal.Value).ToString(),
                 VoidValue _ => "void",
+                FunctionValue fn => "< fn " + fn.name + " >",
                 _ => throw new SemanticError("Invalid operation", context.Start)
             };
 
@@ -160,7 +169,7 @@ public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext co
     public override ValueWrapper VisitIdentifier(LanguageParser.IdentifierContext context)
     {
         string id = context.ID().GetText();
-        return currentEnvironment.GetVariable(id, context.Start);
+        return currentEnvironment.Get(id, context.Start);
     }
 
     // VisitParens
@@ -314,7 +323,7 @@ public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext co
     public override ValueWrapper VisitAssign(LanguageParser.AssignContext context) {
         string id = context.ID().GetText();
         ValueWrapper value = Visit(context.expr());
-        currentEnvironment.AssignVariable(id, value, context.Start);
+        currentEnvironment.Assign(id, value, context.Start);
         return defaultValue;
     }
     
@@ -495,6 +504,8 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
                 Visit(context.expr(1)); // Ejecutar la actualización antes de continuar
                 condition = Visit(context.expr(0)); // Reevaluar la condición 
             }
+            // TODO ---> TRABAJAR return
+
         }
     }
 
@@ -569,12 +580,12 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
     string id = context.ID().GetText();
 
     // Verificar si la variable existe en el entorno
-    if (currentEnvironment.GetVariable(id, context.Start) == null) {
+    if (currentEnvironment.Get(id, context.Start) == null) {
         throw new SemanticError("Variable not found", context.Start);
     }
 
     // Obtener el valor actual de la variable
-    ValueWrapper currentVariable = currentEnvironment.GetVariable(id, context.Start);
+    ValueWrapper currentVariable = currentEnvironment.Get(id, context.Start);
 
     // Evaluar la expresión
     ValueWrapper valueToAdd = Visit(context.expr());
@@ -610,7 +621,7 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         }
 
         // Actualizar la variable en el entorno
-        currentEnvironment.AssignVariable(id, newValue, context.Start);
+        currentEnvironment.Assign(id, newValue, context.Start);
         
         // Devolver el nuevo valor
         return newValue;
@@ -638,7 +649,7 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         }
 
         // Actualizar la variable en el entorno
-        currentEnvironment.AssignVariable(id, newValue, context.Start);
+        currentEnvironment.Assign(id, newValue, context.Start);
         
         // Devolver el nuevo valor
         return newValue;
@@ -666,5 +677,45 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         
         throw new ReturnException(value);
     }
+
+    //VisitCalle
+    public override ValueWrapper VisitCalle(LanguageParser.CalleContext context) {
+        ValueWrapper callee = Visit(context.expr());
+        // recorrer cada llamada
+        foreach (var call in context.call()) 
+        {
+            if (callee is FunctionValue functionValue){
+                callee = VisitCall(functionValue.invocable, call.args());
+            } else {
+                throw new SemanticError("Invalid operation", context.Start);
+            }
+        }
+        return callee;
+    }
+
+    public ValueWrapper VisitCall(Invocable invocable, LanguageParser.ArgsContext context) {
+        List<ValueWrapper> arguments = new List<ValueWrapper>();
+        if (context != null) {
+            foreach (var expr in context.expr()) {
+                arguments.Add(Visit(expr));
+            }
+        }
+        if (context != null && arguments.Count != invocable.Arity()) {
+            throw new SemanticError("Invalid number of arguments", context.Start);
+        }
+        // TODO validar cantidad de argumentos enviados y el tipo
+        return invocable.Invoke(arguments, this);
+    }
+
+    //VisitFuncDcl
+    public override ValueWrapper VisitFuncDcl(LanguageParser.FuncDclContext context) {
+        
+        var foreign = new ForeignFunction(currentEnvironment, context);
+        currentEnvironment.Declare(context.ID().GetText(), new FunctionValue(foreign, context.ID().GetText()), context.Start);
+        
+
+        return defaultValue;
+    }
+
 }
 
