@@ -14,6 +14,7 @@ classDcl: 'class' ID '{' classBody* '}';
 
 classBody: varDcl | shortVarDcl | funcDcl;
 
+
 params: ID (',' ID)*;
 
 stmt: 
@@ -44,7 +45,7 @@ expr:
 	| expr op = ('>' | '<' | '>=' | '<=') expr 	# Relational
 	| expr op = ('==' | '!=') expr 				# Equalitys
 	| expr op = ('&&' | '||') expr 				# Logical
-	| ID '=' expr								# Assign
+	| expr '=' expr								# Assign
 	| 'strconv.Atoi(' expr ')' (';')? 			# AtoiStmt
 	| 'strconv.ParseFloat(' expr ')' (';')? 	# ParseFloatStmt
 	| 'reflect.TypeOf(' expr ')' (';')? 		# TypeOfStmt
@@ -61,7 +62,7 @@ expr:
 call: '(' args? ')' #FuncCall | '.' ID #Get;
 args: expr (',' expr)*;
 
-Types: 'int' | 'float64' | 'string' | 'bool' | 'rune';
+Types: 'int' | 'float64' | 'string' | 'bool' | 'rune' ;
 
 // Tipos de datos
 INT: [0-9]+;

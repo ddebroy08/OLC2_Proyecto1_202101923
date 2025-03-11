@@ -82,6 +82,26 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitFuncDcl([NotNull] LanguageParser.FuncDclContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.classDcl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterClassDcl([NotNull] LanguageParser.ClassDclContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.classDcl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitClassDcl([NotNull] LanguageParser.ClassDclContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.classBody"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterClassBody([NotNull] LanguageParser.ClassBodyContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.classBody"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitClassBody([NotNull] LanguageParser.ClassBodyContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="LanguageParser.params"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -269,6 +289,18 @@ public interface ILanguageListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitEqualitys([NotNull] LanguageParser.EqualitysContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>New</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterNew([NotNull] LanguageParser.NewContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>New</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitNew([NotNull] LanguageParser.NewContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
@@ -510,15 +542,29 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitRune([NotNull] LanguageParser.RuneContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="LanguageParser.call"/>.
+	/// Enter a parse tree produced by the <c>FuncCall</c>
+	/// labeled alternative in <see cref="LanguageParser.call"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterCall([NotNull] LanguageParser.CallContext context);
+	void EnterFuncCall([NotNull] LanguageParser.FuncCallContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="LanguageParser.call"/>.
+	/// Exit a parse tree produced by the <c>FuncCall</c>
+	/// labeled alternative in <see cref="LanguageParser.call"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitCall([NotNull] LanguageParser.CallContext context);
+	void ExitFuncCall([NotNull] LanguageParser.FuncCallContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>Get</c>
+	/// labeled alternative in <see cref="LanguageParser.call"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterGet([NotNull] LanguageParser.GetContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Get</c>
+	/// labeled alternative in <see cref="LanguageParser.call"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitGet([NotNull] LanguageParser.GetContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="LanguageParser.args"/>.
 	/// </summary>
