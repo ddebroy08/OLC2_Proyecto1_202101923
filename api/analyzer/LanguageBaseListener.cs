@@ -73,6 +73,18 @@ public partial class LanguageBaseListener : ILanguageListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitVarDcl([NotNull] LanguageParser.VarDclContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.sliceDcl"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterSliceDcl([NotNull] LanguageParser.SliceDclContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.sliceDcl"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitSliceDcl([NotNull] LanguageParser.SliceDclContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="LanguageParser.shortVarDcl"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -84,6 +96,18 @@ public partial class LanguageBaseListener : ILanguageListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitShortVarDcl([NotNull] LanguageParser.ShortVarDclContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.shortSliceDcl"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterShortSliceDcl([NotNull] LanguageParser.ShortSliceDclContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.shortSliceDcl"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitShortSliceDcl([NotNull] LanguageParser.ShortSliceDclContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="LanguageParser.funcDcl"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -438,6 +462,20 @@ public partial class LanguageBaseListener : ILanguageListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitLogical([NotNull] LanguageParser.LogicalContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>Index</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterIndex([NotNull] LanguageParser.IndexContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Index</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitIndex([NotNull] LanguageParser.IndexContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by the <c>String</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.

@@ -53,7 +53,5 @@ public class LanguageClass : Invocable
         return new InstanceValue(newInstance);
     }
 
-   
-
 
 }

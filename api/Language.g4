@@ -2,18 +2,21 @@ grammar Language;
 
 program: dcl*;
 
-dcl: varDcl | stmt | shortVarDcl | classDcl | funcDcl;
+dcl: varDcl | sliceDcl | shortSliceDcl | stmt | shortVarDcl | classDcl | funcDcl;
 
 varDcl: 'var' ID Types ('=' expr)? (';')?;
 
+sliceDcl: 'var' ID '[' ']' Types ('=' '[' ']' Types '{' expr (',' expr)* '}' | '=' expr)? (';')?;
+
 shortVarDcl: ID ':=' expr (';')?;
+
+shortSliceDcl: ID ':=' '[' ']' Types '{' expr (',' expr)* '}' (';')?;
 
 funcDcl: 'func' ID '(' params? ')' '{' dcl* '}';
 
 classDcl: 'class' ID '{' classBody* '}';
 
 classBody: varDcl | shortVarDcl | funcDcl;
-
 
 params: ID (',' ID)*;
 
@@ -56,6 +59,7 @@ expr:
 	| RUNE										# Rune
 	| 'new' ID '(' args? ')'					# New
 	| ID										# Identifier
+	| ID '[' expr ']' 							# Index
 	| '[' expr ']' (';')? 						# brackets
 	| '(' expr ')'								# Parens;
 

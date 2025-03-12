@@ -51,11 +51,23 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitVarDcl([NotNull] LanguageParser.VarDclContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.sliceDcl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSliceDcl([NotNull] LanguageParser.SliceDclContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="LanguageParser.shortVarDcl"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitShortVarDcl([NotNull] LanguageParser.ShortVarDclContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.shortSliceDcl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitShortSliceDcl([NotNull] LanguageParser.ShortSliceDclContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="LanguageParser.funcDcl"/>.
 	/// </summary>
@@ -233,6 +245,13 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitLogical([NotNull] LanguageParser.LogicalContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>Index</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIndex([NotNull] LanguageParser.IndexContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>String</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.

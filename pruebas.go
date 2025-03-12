@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 var i int // Variable global
 
@@ -15,5 +18,10 @@ func main() {
         default:
             fmt.Println("Otro")
         }
+
+    slice := []int{1, 2, 3} 
+    tipoSlice := reflect.TypeOf(slice) 
+    fmt.Println("Tipo de slice:", tipoSlice)
+    fmt.Println(slice[1])
 }
 

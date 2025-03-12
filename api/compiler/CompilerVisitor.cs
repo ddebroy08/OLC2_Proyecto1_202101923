@@ -34,7 +34,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         string type = context.Types().GetText(); // Obtener el tipo declarado
         ValueWrapper value;
 
-        if(context.expr() != null)
+        if (context.expr() != null)
         {
             value = Visit(context.expr());
         }
@@ -52,7 +52,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             };
         }
         // Validar el tipo
-        if (!IsValidType(value, type))
+        if (!IsValidType(value, GetDefaultValue(type)))
         {
             throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {type}", context.Start);
         }
@@ -61,6 +61,24 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         return defaultValue;
     }
 
+    private ValueWrapper GetDefaultValue(string type)
+    {
+        return type switch
+        {
+            "int" => new IntValue(0),
+            "float64" => new FloatValue(0),
+            "string" => new StringValue(""),
+            "bool" => new BoolValue(false),
+            "rune" => new RuneValue('x'),
+            "[]int" => new SliceValue<int>(new List<int>()),
+            "[]float64" => new SliceValue<double>(new List<double>()),
+            "[]string" => new SliceValue<string>(new List<string>()),
+            "[]bool" => new SliceValue<bool>(new List<bool>()),
+            "[]rune" => new SliceValue<char>(new List<char>()),
+            _ => throw new SemanticError("Invalid type", null)
+        };
+    }
+    
     //VisitShortVarDcl
     public override ValueWrapper VisitShortVarDcl(LanguageParser.ShortVarDclContext context) {
         string id = context.ID().GetText();
@@ -69,17 +87,104 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         return defaultValue;
     }
 
-    // Validar tipos de datos
-    private bool IsValidType(ValueWrapper value, string declaredType)
+    //VisitSliceDcl
+    public override ValueWrapper VisitSliceDcl(LanguageParser.SliceDclContext context)
     {
-        return declaredType switch
+        string id = context.ID().GetText();
+        string type = context.Types(0).GetText(); // Obtener el tipo declarado
+        ValueWrapper value;
+
+        if (context.expr() != null && context.expr().Length > 0)
         {
-            "int" => value is IntValue,
-            "float64" => value is FloatValue,
-            "string" => value is StringValue,
-            "bool" => value is BoolValue,
-            "rune" => value is RuneValue, //'rune' se maneja como un char
-            _ => false // Tipo no reconocido
+            // Inicializar el slice con valores
+            var values = new List<ValueWrapper>();
+            foreach (var expr in context.expr())
+            {
+                values.Add(Visit(expr));
+            }
+
+            value = type switch
+            {
+                "int" => new SliceValue<int>(values.Cast<IntValue>().Select(v => v.Value).ToList()),
+                "float64" => new SliceValue<double>(values.Cast<FloatValue>().Select(v => v.Value).ToList()),
+                "string" => new SliceValue<string>(values.Cast<StringValue>().Select(v => v.Value).ToList()),
+                "bool" => new SliceValue<bool>(values.Cast<BoolValue>().Select(v => v.Value).ToList()),
+                "rune" => new SliceValue<char>(values.Cast<RuneValue>().Select(v => v.Value).ToList()),
+                _ => throw new SemanticError("Invalid type", context.Start)
+            };
+        }
+        else
+        {
+            // Inicializar un slice vacío
+            value = type switch
+            {
+                "int" => new SliceValue<int>(new List<int>()),
+                "float64" => new SliceValue<double>(new List<double>()),
+                "string" => new SliceValue<string>(new List<string>()),
+                "bool" => new SliceValue<bool>(new List<bool>()),
+                "rune" => new SliceValue<char>(new List<char>()),
+                _ => throw new SemanticError("Invalid type", context.Start)
+            };
+        }
+
+        currentEnvironment.Declare(id, value, context.Start);
+        return defaultValue;
+    }
+
+    //VisitShortSliceDcl
+    public override ValueWrapper VisitShortSliceDcl(LanguageParser.ShortSliceDclContext context)
+    {
+        string id = context.ID().GetText();
+        string type = context.Types().GetText(); // Obtener el tipo declarado
+        ValueWrapper value;
+
+        // Inicializar el slice con valores
+        var values = new List<ValueWrapper>();
+        foreach (var expr in context.expr())
+        {
+            values.Add(Visit(expr));
+        }
+
+        value = type switch
+        {
+            "int" => new SliceValue<int>(values.Cast<IntValue>().Select(v => v.Value).ToList()),
+            "float64" => new SliceValue<double>(values.Cast<FloatValue>().Select(v => v.Value).ToList()),
+            "string" => new SliceValue<string>(values.Cast<StringValue>().Select(v => v.Value).ToList()),
+            "bool" => new SliceValue<bool>(values.Cast<BoolValue>().Select(v => v.Value).ToList()),
+            "rune" => new SliceValue<char>(values.Cast<RuneValue>().Select(v => v.Value).ToList()),
+            _ => throw new SemanticError("Invalid type", context.Start)
+        };
+
+        currentEnvironment.Declare(id, value, context.Start);
+        return defaultValue;
+    }
+
+    //VisitIndex
+    public override ValueWrapper VisitIndex(LanguageParser.IndexContext context)
+    {
+        string id = context.ID().GetText();
+        ValueWrapper slice = currentEnvironment.Get(id, context.Start);
+        int index = int.Parse(context.expr().GetText());
+        return Slices.GetIndexedValue(slice, index, context);
+    }
+
+
+    // Validar tipos de datos
+    private bool IsValidType(ValueWrapper value, ValueWrapper existingValue)
+    {
+        return (existingValue, value) switch
+        {
+            (IntValue, IntValue) => true,
+            (FloatValue, FloatValue) => true,
+            (StringValue, StringValue) => true,
+            (BoolValue, BoolValue) => true,
+            (RuneValue, RuneValue) => true,
+            (SliceValue<int>, SliceValue<int>) => true,
+            (SliceValue<double>, SliceValue<double>) => true,
+            (SliceValue<string>, SliceValue<string>) => true,
+            (SliceValue<bool>, SliceValue<bool>) => true,
+            (SliceValue<char>, SliceValue<char>) => true,
+            _ => false
         };
     }
 
@@ -97,19 +202,43 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         {
             ValueWrapper value = Visit(context.expr(i));
 
-            output += value switch {
-                IntValue iVal => iVal.Value.ToString(),
-                FloatValue fVal => fVal.Value.ToString("G", CultureInfo.InvariantCulture),
-                StringValue sVal => sVal.Value,
-                BoolValue bVal => bVal.Value.ToString(),
-                RuneValue rVal => ((int)rVal.Value).ToString(),
-                VoidValue _ => "void",
-                FunctionValue fn => "< fn " + fn.name + " >",
-                _ => throw new SemanticError("Invalid operation", context.Start)
-            };
+            if (value is SliceValue<int> intSlice)
+            {
+                output += "[" + string.Join(" ", intSlice.Values) + "]";
+            }
+            else if (value is SliceValue<double> floatSlice)
+            {
+                output += "[" + string.Join(" ", floatSlice.Values.Select(v => v.ToString(CultureInfo.InvariantCulture))) + "]";
+            }
+            else if (value is SliceValue<string> stringSlice)
+            {
+                output += "[" + string.Join(" ", stringSlice.Values) + "]";
+            }
+            else if (value is SliceValue<bool> boolSlice)
+            {
+                output += "[" + string.Join(" ", boolSlice.Values) + "]";
+            }
+            else if (value is SliceValue<char> runeSlice)
+            {
+                output += "[" + string.Join(" ", runeSlice.Values.Select(v => ((int)v).ToString())) + "]";
+            }
+            else
+            {
+                output += value switch
+                {
+                    IntValue iVal => iVal.Value.ToString(),
+                    FloatValue fVal => fVal.Value.ToString("G", CultureInfo.InvariantCulture),
+                    StringValue sVal => sVal.Value,
+                    BoolValue bVal => bVal.Value.ToString(),
+                    RuneValue rVal => ((int)rVal.Value).ToString(),
+                    VoidValue _ => "void",
+                    FunctionValue fn => "< fn " + fn.name + " >",
+                    _ => throw new SemanticError("Invalid operation", context.Start)
+                };
+            }
 
             // Agregar espacio entre valores excepto el último
-            if (i < context.expr().Length - 1) 
+            if (i < context.expr().Length - 1)
             {
                 output += " ";
             }
@@ -152,19 +281,26 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     }
 
     //VisitTypeOfStmt
-public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext context) {
-    ValueWrapper value = Visit(context.expr());
-    string type = value switch {
-        IntValue => "int",
-        FloatValue => "float64",
-        StringValue => "string",
-        BoolValue => "bool",
-        RuneValue => "rune",
-        _ => "void"
-    };
-    
-    return new StringValue(type);
-}
+    public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext context)
+    {
+        ValueWrapper value = Visit(context.expr());
+        string type = value switch
+        {
+            IntValue => "int",
+            FloatValue => "float64",
+            StringValue => "string",
+            BoolValue => "bool",
+            RuneValue => "rune",
+            SliceValue<int> => "[]int",
+            SliceValue<double> => "[]float64",
+            SliceValue<string> => "[]string",
+            SliceValue<bool> => "[]bool",
+            SliceValue<char> => "[]rune",
+            _ => "void"
+        };
+        
+        return new StringValue(type);
+    }
 
     // VisitIdentifier
     public override ValueWrapper VisitIdentifier(LanguageParser.IdentifierContext context)
@@ -321,16 +457,25 @@ public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext co
     }
     
     //VisitAssign
-    public override ValueWrapper VisitAssign(LanguageParser.AssignContext context) {
+public override ValueWrapper VisitAssign(LanguageParser.AssignContext context)
+    {
         var asignee = context.expr(0);
         ValueWrapper value = Visit(context.expr(1));
 
-        if(asignee is LanguageParser.IdentifierContext idContext)
+        if (asignee is LanguageParser.IdentifierContext idContext)
         {
             string id = idContext.ID().GetText();
+            ValueWrapper existingValue = currentEnvironment.Get(id, context.Start);
+
+            // Validar que el tipo de la variable existente y el valor asignado sean compatibles
+            if (!IsValidType(value, existingValue))
+            {
+                throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {existingValue.GetType().Name}", context.Start);
+            }
+
             currentEnvironment.Assign(id, value, context.Start);
             return defaultValue;
-        } 
+        }
         else if (asignee is LanguageParser.CalleContext calleContext)
         {
             ValueWrapper callee = Visit(calleContext.expr());
@@ -339,7 +484,7 @@ public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext co
             {
                 var action = calleContext.call(i);
 
-                if ( i == calleContext.call().Length - 1)
+                if (i == calleContext.call().Length - 1)
                 {
                     if (action is LanguageParser.GetContext propertyAccess)
                     {
@@ -348,12 +493,14 @@ public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext co
                             var instance = instanceValue.instance;
                             var propertyName = propertyAccess.ID().GetText();
                             instance.Set(propertyName, value);
-                        } 
-                        else 
+                        }
+                        else
                         {
                             throw new SemanticError("Invalid property access", context.Start);
                         }
-                    } else {
+                    }
+                    else
+                    {
                         throw new SemanticError("Invalid assign", context.Start);
                     }
                 }
@@ -363,30 +510,33 @@ public override ValueWrapper VisitTypeOfStmt(LanguageParser.TypeOfStmtContext co
                     if (callee is FunctionValue functionValue)
                     {
                         callee = VisitCall(functionValue.invocable, funcCall.args());
-                    } 
-                    else 
+                    }
+                    else
                     {
                         throw new SemanticError("Invalid function call", context.Start);
                     }
-                } else if (action is LanguageParser.GetContext propertyAccess)
+                }
+                else if (action is LanguageParser.GetContext propertyAccess)
                 {
                     if (callee is InstanceValue instanceValue)
                     {
                         callee = instanceValue.instance.Get(propertyAccess.ID().GetText(), propertyAccess.Start);
-                    } else 
+                    }
+                    else
                     {
                         throw new SemanticError("Invalid property access", context.Start);
                     }
                 }
-                
             }
             return callee;
-        } else {
+        }
+        else
+        {
             throw new SemanticError("Invalid operation", context.Start);
         }
-        return defaultValue;
     }
-    
+
+
     //VisitEqualitys
         public override ValueWrapper VisitEqualitys(LanguageParser.EqualitysContext context) {
         ValueWrapper left = Visit(context.expr(0));
