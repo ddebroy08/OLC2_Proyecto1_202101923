@@ -242,37 +242,66 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     // VisitAppendSlice
     public override ValueWrapper VisitAppendSlice(LanguageParser.AppendSliceContext context)
     {
-        // Obtener los argumentos: el slice y el elemento a agregar
-        ValueWrapper sliceValue = Visit(context.expr(0));
-        ValueWrapper elementValue = Visit(context.expr(1));
+        // Evaluar los argumentos de `append`
+        ValueWrapper target = Visit(context.expr(0)); // Primer argumento
+        ValueWrapper toAppend = Visit(context.expr(1)); // Segundo argumento
 
-        // Validar que el primer argumento sea un SliceValue<T>
-        if (sliceValue is not ValueWrapper genericSlice || genericSlice.GetType().GetGenericTypeDefinition() != typeof(SliceValue<>))
+        // Caso 1: Si el primer argumento es un slice unidimensional
+        if (target is SliceValue<int> intSlice && toAppend is IntValue intValue)
         {
-            throw new SemanticError("First argument must be a slice", context.Start);
+            intSlice.Values.Add(intValue.Value);
+            return intSlice;
+        }
+        else if (target is SliceValue<double> floatSlice && toAppend is FloatValue floatValue)
+        {
+            floatSlice.Values.Add(floatValue.Value);
+            return floatSlice;
+        }
+        else if (target is SliceValue<string> stringSlice && toAppend is StringValue stringValue)
+        {
+            stringSlice.Values.Add(stringValue.Value);
+            return stringSlice;
+        }
+        else if (target is SliceValue<bool> boolSlice && toAppend is BoolValue boolValue)
+        {
+            boolSlice.Values.Add(boolValue.Value);
+            return boolSlice;
+        }
+        else if (target is SliceValue<char> runeSlice && toAppend is RuneValue runeValue)
+        {
+            runeSlice.Values.Add(runeValue.Value);
+            return runeSlice;
         }
 
-        // Obtener el tipo genérico del slice
-        Type sliceType = sliceValue.GetType().GetGenericArguments()[0];
-
-        // Crear un nuevo slice con el elemento agregado
-        ValueWrapper newSlice = sliceType switch
+        // Caso 2: Si el primer argumento es una matriz multidimensional
+        if (target is MatrixValue<int> intMatrix && toAppend is SliceValue<int> intRow)
         {
-            Type t when t == typeof(int) && sliceValue is SliceValue<int> intSlice && elementValue is IntValue intValue =>
-                new SliceValue<int>(intSlice.Values.Concat(new[] { intValue.Value }).ToList()),
-            Type t when t == typeof(double) && sliceValue is SliceValue<double> floatSlice && elementValue is FloatValue floatValue =>
-                new SliceValue<double>(floatSlice.Values.Concat(new[] { floatValue.Value }).ToList()),
-            Type t when t == typeof(string) && sliceValue is SliceValue<string> stringSlice && elementValue is StringValue stringValue =>
-                new SliceValue<string>(stringSlice.Values.Concat(new[] { stringValue.Value }).ToList()),
-            Type t when t == typeof(bool) && sliceValue is SliceValue<bool> boolSlice && elementValue is BoolValue boolValue =>
-                new SliceValue<bool>(boolSlice.Values.Concat(new[] { boolValue.Value }).ToList()),
-            Type t when t == typeof(char) && sliceValue is SliceValue<char> runeSlice && elementValue is RuneValue runeValue =>
-                new SliceValue<char>(runeSlice.Values.Concat(new[] { runeValue.Value }).ToList()),
-            _ => throw new SemanticError("Type mismatch or invalid slice type", context.Start)
-        };
+            intMatrix.Values.Add(intRow.Values);
+            return intMatrix;
+        }
+        else if (target is MatrixValue<double> floatMatrix && toAppend is SliceValue<double> floatRow)
+        {
+            floatMatrix.Values.Add(floatRow.Values);
+            return floatMatrix;
+        }
+        else if (target is MatrixValue<string> stringMatrix && toAppend is SliceValue<string> stringRow)
+        {
+            stringMatrix.Values.Add(stringRow.Values);
+            return stringMatrix;
+        }
+        else if (target is MatrixValue<bool> boolMatrix && toAppend is SliceValue<bool> boolRow)
+        {
+            boolMatrix.Values.Add(boolRow.Values);
+            return boolMatrix;
+        }
+        else if (target is MatrixValue<char> runeMatrix && toAppend is SliceValue<char> runeRow)
+        {
+            runeMatrix.Values.Add(runeRow.Values);
+            return runeMatrix;
+        }
 
-        // Retornar el nuevo slice
-        return newSlice;
+        // Si no coincide con ninguno de los casos anteriores, lanzar un error
+        throw new SemanticError("Invalid use of append: incompatible types", context.Start);
     }
 
     // VisitLenSlice
@@ -643,16 +672,28 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     {
         return (existingValue, value) switch
         {
+            // Validaciones para tipos básicos
             (IntValue, IntValue) => true,
             (FloatValue, FloatValue) => true,
             (StringValue, StringValue) => true,
             (BoolValue, BoolValue) => true,
             (RuneValue, RuneValue) => true,
+
+            // Validaciones para slices unidimensionales
             (SliceValue<int>, SliceValue<int>) => true,
             (SliceValue<double>, SliceValue<double>) => true,
             (SliceValue<string>, SliceValue<string>) => true,
             (SliceValue<bool>, SliceValue<bool>) => true,
             (SliceValue<char>, SliceValue<char>) => true,
+
+            // Validaciones para slices multidimensionales (matrices)
+            (MatrixValue<int>, MatrixValue<int>) => true,
+            (MatrixValue<double>, MatrixValue<double>) => true,
+            (MatrixValue<string>, MatrixValue<string>) => true,
+            (MatrixValue<bool>, MatrixValue<bool>) => true,
+            (MatrixValue<char>, MatrixValue<char>) => true,
+
+            // Si no coincide con ninguno de los casos anteriores, no es válido
             _ => false
         };
     }
