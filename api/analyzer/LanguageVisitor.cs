@@ -51,6 +51,12 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitVarDcl([NotNull] LanguageParser.VarDclContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.sliceDclMultidimensional"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSliceDclMultidimensional([NotNull] LanguageParser.SliceDclMultidimensionalContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="LanguageParser.sliceDcl"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -92,6 +98,12 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitParams([NotNull] LanguageParser.ParamsContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.row"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitRow([NotNull] LanguageParser.RowContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>ExprStmt</c>
 	/// labeled alternative in <see cref="LanguageParser.stmt"/>.
@@ -196,6 +208,13 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitNew([NotNull] LanguageParser.NewContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>MultiIndexAssig</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitMultiIndexAssig([NotNull] LanguageParser.MultiIndexAssigContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
@@ -308,6 +327,13 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitRelational([NotNull] LanguageParser.RelationalContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>MultiIndex</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitMultiIndex([NotNull] LanguageParser.MultiIndexContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>ParseFloatStmt</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.

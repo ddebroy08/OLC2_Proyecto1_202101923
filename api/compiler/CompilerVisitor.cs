@@ -425,6 +425,218 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         return defaultValue;
     }
 
+    // VisitSliceDclMultidimensional
+    public override ValueWrapper VisitSliceDclMultidimensional(LanguageParser.SliceDclMultidimensionalContext context)
+    {
+        // Obtener el identificador de la matriz
+        string id = context.ID().GetText();
+        string type = context.Types().GetText(); // Obtener el tipo declarado (por ejemplo, int, float64, etc.)
+        var rows = new List<List<ValueWrapper>>();
+
+        // Procesar cada fila
+        foreach (var rowContext in context.row())
+        {
+            var row = new List<ValueWrapper>();
+            foreach (var exprContext in rowContext.expr())
+            {
+                row.Add(Visit(exprContext)); // Evaluar cada expresión en la fila
+            }
+            rows.Add(row);
+        }
+
+        // Validar que todas las filas tengan la misma longitud (si es un requisito)
+        int? rowLength = null;
+        foreach (var row in rows)
+        {
+            if (rowLength == null)
+            {
+                rowLength = row.Count;
+            }
+            else if (row.Count != rowLength)
+            {
+                throw new SemanticError("All rows in the matrix must have the same number of columns", context.Start);
+            }
+        }
+
+        // Crear un MatrixValue basado en el tipo declarado
+        ValueWrapper value = type switch
+        {
+            "int" => new MatrixValue<int>(rows.Select(r => r.Cast<IntValue>().Select(v => v.Value).ToList()).ToList()),
+            "float64" => new MatrixValue<double>(rows.Select(r => r.Cast<FloatValue>().Select(v => v.Value).ToList()).ToList()),
+            "string" => new MatrixValue<string>(rows.Select(r => r.Cast<StringValue>().Select(v => v.Value).ToList()).ToList()),
+            "bool" => new MatrixValue<bool>(rows.Select(r => r.Cast<BoolValue>().Select(v => v.Value).ToList()).ToList()),
+            "rune" => new MatrixValue<char>(rows.Select(r => r.Cast<RuneValue>().Select(v => v.Value).ToList()).ToList()),
+            _ => throw new SemanticError($"Invalid matrix type: {type}", context.Start)
+        };
+
+        // Declarar la matriz en el entorno
+        currentEnvironment.Declare(id, value, context.Start);
+
+        return defaultValue;
+    }
+
+    //VisitMultiIndexAssig
+    public override ValueWrapper VisitMultiIndexAssig(LanguageParser.MultiIndexAssigContext context)
+    {
+        // Obtener el identificador de la matriz
+        string id = context.ID().GetText();
+        ValueWrapper matrixValue = currentEnvironment.Get(id, context.Start);
+
+        // Validar que la variable sea una matriz
+        if (matrixValue is not MatrixValue<int> &&
+            matrixValue is not MatrixValue<double> &&
+            matrixValue is not MatrixValue<string> &&
+            matrixValue is not MatrixValue<bool> &&
+            matrixValue is not MatrixValue<char>)
+        {
+            throw new SemanticError($"Variable '{id}' is not a valid matrix", context.Start);
+        }
+
+        // Obtener los índices de fila y columna
+        ValueWrapper rowIndexValue = Visit(context.expr(0));
+        ValueWrapper colIndexValue = Visit(context.expr(1));
+
+        // Validar que ambos índices sean enteros
+        if (rowIndexValue is not IntValue rowIndex || colIndexValue is not IntValue colIndex)
+        {
+            throw new SemanticError("Matrix indices must be integers", context.Start);
+        }
+
+        // Validar que los índices estén dentro de los límites de la matriz
+        int rowCount = matrixValue switch
+        {
+            MatrixValue<int> intMatrix => intMatrix.Values.Count,
+            MatrixValue<double> floatMatrix => floatMatrix.Values.Count,
+            MatrixValue<string> stringMatrix => stringMatrix.Values.Count,
+            MatrixValue<bool> boolMatrix => boolMatrix.Values.Count,
+            MatrixValue<char> runeMatrix => runeMatrix.Values.Count,
+            _ => throw new SemanticError("Invalid matrix type", context.Start)
+        };
+
+        if (rowIndex.Value < 0 || rowIndex.Value >= rowCount)
+        {
+            throw new SemanticError("Row index out of bounds", context.Start);
+        }
+
+        int colCount = matrixValue switch
+        {
+            MatrixValue<int> intMatrix => intMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<double> floatMatrix => floatMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<string> stringMatrix => stringMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<bool> boolMatrix => boolMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<char> runeMatrix => runeMatrix.Values[rowIndex.Value].Count,
+            _ => throw new SemanticError("Invalid matrix type", context.Start)
+        };
+
+        if (colIndex.Value < 0 || colIndex.Value >= colCount)
+        {
+            throw new SemanticError("Column index out of bounds", context.Start);
+        }
+
+        // Obtener el nuevo valor a asignar
+        ValueWrapper newValue = Visit(context.expr(2));
+
+        // Asignar el nuevo valor en la posición [fila][columna] de la matriz
+        switch (matrixValue)
+        {
+            case MatrixValue<int> intMatrix when newValue is IntValue intValue:
+                intMatrix.Values[rowIndex.Value][colIndex.Value] = intValue.Value;
+                break;
+
+            case MatrixValue<double> floatMatrix when newValue is FloatValue floatValue:
+                floatMatrix.Values[rowIndex.Value][colIndex.Value] = floatValue.Value;
+                break;
+
+            case MatrixValue<string> stringMatrix when newValue is StringValue stringValue:
+                stringMatrix.Values[rowIndex.Value][colIndex.Value] = stringValue.Value;
+                break;
+
+            case MatrixValue<bool> boolMatrix when newValue is BoolValue boolValue:
+                boolMatrix.Values[rowIndex.Value][colIndex.Value] = boolValue.Value;
+                break;
+
+            case MatrixValue<char> runeMatrix when newValue is RuneValue runeValue:
+                runeMatrix.Values[rowIndex.Value][colIndex.Value] = runeValue.Value;
+                break;
+
+            default:
+                throw new SemanticError("Type mismatch or invalid matrix type", context.Start);
+        }
+
+        // Retornar el valor por defecto después de la asignación
+        return defaultValue;
+    }
+
+    // VisitMultiIndex
+    public override ValueWrapper VisitMultiIndex(LanguageParser.MultiIndexContext context)
+    {
+        // Obtener el identificador de la matriz
+        string id = context.ID().GetText();
+        ValueWrapper matrixValue = currentEnvironment.Get(id, context.Start);
+
+        // Validar que la variable sea una matriz
+        if (matrixValue is not MatrixValue<int> &&
+            matrixValue is not MatrixValue<double> &&
+            matrixValue is not MatrixValue<string> &&
+            matrixValue is not MatrixValue<bool> &&
+            matrixValue is not MatrixValue<char>)
+        {
+            throw new SemanticError($"Variable '{id}' is not a valid matrix", context.Start);
+        }
+
+        // Obtener los índices de fila y columna
+        ValueWrapper rowIndexValue = Visit(context.expr(0));
+        ValueWrapper colIndexValue = Visit(context.expr(1));
+
+        // Validar que ambos índices sean enteros
+        if (rowIndexValue is not IntValue rowIndex || colIndexValue is not IntValue colIndex)
+        {
+            throw new SemanticError("Matrix indices must be integers", context.Start);
+        }
+
+        // Validar que los índices estén dentro de los límites de la matriz
+        int rowCount = matrixValue switch
+        {
+            MatrixValue<int> intMatrix => intMatrix.Values.Count,
+            MatrixValue<double> floatMatrix => floatMatrix.Values.Count,
+            MatrixValue<string> stringMatrix => stringMatrix.Values.Count,
+            MatrixValue<bool> boolMatrix => boolMatrix.Values.Count,
+            MatrixValue<char> runeMatrix => runeMatrix.Values.Count,
+            _ => throw new SemanticError("Invalid matrix type", context.Start)
+        };
+
+        if (rowIndex.Value < 0 || rowIndex.Value >= rowCount)
+        {
+            throw new SemanticError("Row index out of bounds", context.Start);
+        }
+
+        int colCount = matrixValue switch
+        {
+            MatrixValue<int> intMatrix => intMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<double> floatMatrix => floatMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<string> stringMatrix => stringMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<bool> boolMatrix => boolMatrix.Values[rowIndex.Value].Count,
+            MatrixValue<char> runeMatrix => runeMatrix.Values[rowIndex.Value].Count,
+            _ => throw new SemanticError("Invalid matrix type", context.Start)
+        };
+
+        if (colIndex.Value < 0 || colIndex.Value >= colCount)
+        {
+            throw new SemanticError("Column index out of bounds", context.Start);
+        }
+
+        // Retornar el valor en la posición [fila][columna] de la matriz
+        return matrixValue switch
+        {
+            MatrixValue<int> intMatrix => new IntValue(intMatrix.Values[rowIndex.Value][colIndex.Value]),
+            MatrixValue<double> floatMatrix => new FloatValue(floatMatrix.Values[rowIndex.Value][colIndex.Value]),
+            MatrixValue<string> stringMatrix => new StringValue(stringMatrix.Values[rowIndex.Value][colIndex.Value]),
+            MatrixValue<bool> boolMatrix => new BoolValue(boolMatrix.Values[rowIndex.Value][colIndex.Value]),
+            MatrixValue<char> runeMatrix => new RuneValue(runeMatrix.Values[rowIndex.Value][colIndex.Value]),
+            _ => throw new SemanticError("Invalid matrix type", context.Start)
+        };
+    }
+
 
     // Validar tipos de datos
     private bool IsValidType(ValueWrapper value, ValueWrapper existingValue)
@@ -715,97 +927,137 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     
     //VisitAssign
     public override ValueWrapper VisitAssign(LanguageParser.AssignContext context)
+{
+    var asignee = context.expr(0); // Lado izquierdo de la asignación
+    ValueWrapper value = Visit(context.expr(1)); // Lado derecho de la asignación
+
+    if (asignee is LanguageParser.IdentifierContext idContext)
     {
-        var asignee = context.expr(0);
-        ValueWrapper value = Visit(context.expr(1));
+        string id = idContext.ID().GetText();
+        ValueWrapper existingValue = currentEnvironment.Get(id, context.Start);
 
-        if (asignee is LanguageParser.IdentifierContext idContext)
+        // Validar que el tipo de la variable existente y el valor asignado sean compatibles
+        if (!IsValidType(value, existingValue))
         {
-            string id = idContext.ID().GetText();
-            ValueWrapper existingValue = currentEnvironment.Get(id, context.Start);
-
-            // Validar que el tipo de la variable existente y el valor asignado sean compatibles
-            if (!IsValidType(value, existingValue))
-            {
-                throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {existingValue.GetType().Name}", context.Start);
-            }
-
-            currentEnvironment.Assign(id, value, context.Start);
-            return defaultValue;
+            throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {existingValue.GetType().Name}", context.Start);
         }
-        else if (asignee is LanguageParser.SliceInitContext sliceInitContext)
-        {
-            // Inicializar el slice con valores
-            var values = new List<ValueWrapper>();
-            foreach (var expr in sliceInitContext.expr())
-            {
-                values.Add(Visit(expr));
-            }
 
-            value = new SliceValue<ValueWrapper>(values);
-            string id = context.expr(0).GetText();
-            currentEnvironment.Assign(id, value, context.Start);
-            return defaultValue;
+        currentEnvironment.Assign(id, value, context.Start);
+        return defaultValue;
+    }
+    else if (asignee is LanguageParser.MultiIndexContext multiIndexContext)
+    {
+        // Manejar asignaciones a elementos específicos de matrices
+        string id = multiIndexContext.ID().GetText();
+        ValueWrapper matrixValue = currentEnvironment.Get(id, context.Start);
+
+        // Validar que el valor sea una matriz
+        if (matrixValue is not MatrixValue<ValueWrapper> matrix)
+        {
+            throw new SemanticError($"Variable '{id}' is not a valid matrix", context.Start);
         }
-        else if (asignee is LanguageParser.CalleContext calleContext)
+
+        // Obtener los índices
+        var rowIndexValue = Visit(multiIndexContext.expr(0));
+        var colIndexValue = Visit(multiIndexContext.expr(1));
+
+        if (rowIndexValue is not IntValue rowIndex || colIndexValue is not IntValue colIndex)
         {
-            ValueWrapper callee = Visit(calleContext.expr());
-            // recorrer cada llamada
-            for (int i = 0; i < calleContext.call().Length; i++)
+            throw new SemanticError("Matrix indices must be integers", context.Start);
+        }
+
+        // Validar que los índices estén dentro de los límites
+        if (rowIndex.Value < 0 || rowIndex.Value >= matrix.Values.Count ||
+            colIndex.Value < 0 || colIndex.Value >= matrix.Values[rowIndex.Value].Count)
+        {
+            throw new SemanticError("Matrix index out of bounds", context.Start);
+        }
+
+        // Asignar el nuevo valor al elemento de la matriz
+        matrix.Values[rowIndex.Value][colIndex.Value] = value;
+        return defaultValue;
+    }
+    else if (asignee is LanguageParser.SliceInitContext sliceInitContext)
+    {
+        // Manejar la inicialización de slices o matrices
+        var rows = new List<List<ValueWrapper>>();
+
+        // Procesar cada fila
+        foreach (var rowContext in sliceInitContext.row())
+        {
+            var row = new List<ValueWrapper>();
+            foreach (var exprContext in rowContext.expr())
             {
-                var action = calleContext.call(i);
+                row.Add(Visit(exprContext));
+            }
+            rows.Add(row);
+        }
 
-                if (i == calleContext.call().Length - 1)
-                {
-                    if (action is LanguageParser.GetContext propertyAccess)
-                    {
-                        if (callee is InstanceValue instanceValue)
-                        {
-                            var instance = instanceValue.instance;
-                            var propertyName = propertyAccess.ID().GetText();
-                            instance.Set(propertyName, value);
-                        }
-                        else
-                        {
-                            throw new SemanticError("Invalid property access", context.Start);
-                        }
-                    }
-                    else
-                    {
-                        throw new SemanticError("Invalid assign", context.Start);
-                    }
-                }
+        // Crear un MatrixValue con las filas procesadas
+        value = new MatrixValue<ValueWrapper>(rows);
+        string id = context.expr(0).GetText();
+        currentEnvironment.Assign(id, value, context.Start);
+        return defaultValue;
+    }
+    else if (asignee is LanguageParser.CalleContext calleContext)
+    {
+        ValueWrapper callee = Visit(calleContext.expr());
+        // Recorrer cada llamada
+        for (int i = 0; i < calleContext.call().Length; i++)
+        {
+            var action = calleContext.call(i);
 
-                if (action is LanguageParser.FuncCallContext funcCall)
-                {
-                    if (callee is FunctionValue functionValue)
-                    {
-                        callee = VisitCall(functionValue.invocable, funcCall.args());
-                    }
-                    else
-                    {
-                        throw new SemanticError("Invalid function call", context.Start);
-                    }
-                }
-                else if (action is LanguageParser.GetContext propertyAccess)
+            if (i == calleContext.call().Length - 1)
+            {
+                if (action is LanguageParser.GetContext propertyAccess)
                 {
                     if (callee is InstanceValue instanceValue)
                     {
-                        callee = instanceValue.instance.Get(propertyAccess.ID().GetText(), propertyAccess.Start);
+                        var instance = instanceValue.instance;
+                        var propertyName = propertyAccess.ID().GetText();
+                        instance.Set(propertyName, value);
                     }
                     else
                     {
                         throw new SemanticError("Invalid property access", context.Start);
                     }
                 }
+                else
+                {
+                    throw new SemanticError("Invalid assign", context.Start);
+                }
             }
-            return callee;
+
+            if (action is LanguageParser.FuncCallContext funcCall)
+            {
+                if (callee is FunctionValue functionValue)
+                {
+                    callee = VisitCall(functionValue.invocable, funcCall.args());
+                }
+                else
+                {
+                    throw new SemanticError("Invalid function call", context.Start);
+                }
+            }
+            else if (action is LanguageParser.GetContext propertyAccess)
+            {
+                if (callee is InstanceValue instanceValue)
+                {
+                    callee = instanceValue.instance.Get(propertyAccess.ID().GetText(), propertyAccess.Start);
+                }
+                else
+                {
+                    throw new SemanticError("Invalid property access", context.Start);
+                }
+            }
         }
-        else
-        {
-            throw new SemanticError("Invalid operation", context.Start);
-        }
+        return callee;
     }
+    else
+    {
+        throw new SemanticError("Invalid operation", context.Start);
+    }
+}
 
 
     //VisitEqualitys

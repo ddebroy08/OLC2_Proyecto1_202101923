@@ -2,12 +2,11 @@ grammar Language;
 
 program: dcl*;
 
-dcl: varDcl | sliceDcl | shortSliceDcl | stmt | shortVarDcl | classDcl | funcDcl;
+dcl: varDcl | sliceDcl | shortSliceDcl | sliceDclMultidimensional | stmt | shortVarDcl | classDcl | funcDcl;
 
 varDcl: 'var' ID Types ('=' expr)? (';')?;
 
-
-
+sliceDclMultidimensional: ID ':=' '[][]' Types '{' row (',' row)* ','? '}' (';')?;
 
 sliceDcl: 'var' ID ('[' ']' Types | '=' '[' ']' Types '{' expr (',' expr)* '}' | '=' expr | '=' '{' expr (',' expr)* '}')? (';')?;
 
@@ -22,6 +21,9 @@ classDcl: 'class' ID '{' classBody* '}';
 classBody: varDcl | shortVarDcl | funcDcl;
 
 params: ID (',' ID)*;
+
+row: '{' expr (',' expr)* '}';
+
 
 stmt: 
 	expr (';')? # ExprStmt 
@@ -67,9 +69,11 @@ expr:
 	| 'new' ID '(' args? ')'					# New
 	| ID '[' expr ']' '=' expr					# IndexAssig
 	| ID '[' expr ']' 							# Index
+	| ID '[' expr ']' ('[' expr ']')* '=' expr  # MultiIndexAssig
+	| ID '[' expr ']' ('[' expr ']')*           # MultiIndex
 	| ID										# Identifier
 	| '[' expr ']' (';')? 						# brackets
-    | '{' expr (',' expr)* '}'                  # SliceInit
+    | '{' row (',' row)* '}'                  # SliceInit
 	| '(' expr ')'								# Parens;
 
 call: '(' args? ')' #FuncCall | '.' ID #Get;

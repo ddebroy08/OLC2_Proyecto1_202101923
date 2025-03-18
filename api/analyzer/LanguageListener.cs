@@ -62,6 +62,16 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitVarDcl([NotNull] LanguageParser.VarDclContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.sliceDclMultidimensional"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterSliceDclMultidimensional([NotNull] LanguageParser.SliceDclMultidimensionalContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.sliceDclMultidimensional"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitSliceDclMultidimensional([NotNull] LanguageParser.SliceDclMultidimensionalContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="LanguageParser.sliceDcl"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -131,6 +141,16 @@ public interface ILanguageListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitParams([NotNull] LanguageParser.ParamsContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.row"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterRow([NotNull] LanguageParser.RowContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.row"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitRow([NotNull] LanguageParser.RowContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>ExprStmt</c>
 	/// labeled alternative in <see cref="LanguageParser.stmt"/>.
@@ -309,6 +329,18 @@ public interface ILanguageListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitNew([NotNull] LanguageParser.NewContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>MultiIndexAssig</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterMultiIndexAssig([NotNull] LanguageParser.MultiIndexAssigContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>MultiIndexAssig</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitMultiIndexAssig([NotNull] LanguageParser.MultiIndexAssigContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
@@ -501,6 +533,18 @@ public interface ILanguageListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitRelational([NotNull] LanguageParser.RelationalContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>MultiIndex</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterMultiIndex([NotNull] LanguageParser.MultiIndexContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>MultiIndex</c>
+	/// labeled alternative in <see cref="LanguageParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitMultiIndex([NotNull] LanguageParser.MultiIndexContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>ParseFloatStmt</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.

@@ -18,5 +18,7 @@ public record ClassValue(LanguageClass languageClass) : ValueWrapper;
 
 public record SliceValue<T>(List<T> Values) : ValueWrapper;
 
+public record MatrixValue<T>(List<List<T>> Values) : ValueWrapper;
+
 public record VoidValue : ValueWrapper;
 
