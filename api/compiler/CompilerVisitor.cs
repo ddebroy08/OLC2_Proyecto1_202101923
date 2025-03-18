@@ -83,6 +83,9 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     public override ValueWrapper VisitShortVarDcl(LanguageParser.ShortVarDclContext context) {
         string id = context.ID().GetText();
         ValueWrapper value = Visit(context.expr());
+
+        Console.WriteLine($"Asignando a {id}: {value}");
+
         currentEnvironment.Declare(id, value, context.Start);
         return defaultValue;
     }
@@ -91,7 +94,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     public override ValueWrapper VisitSliceDcl(LanguageParser.SliceDclContext context)
     {
         string id = context.ID().GetText();
-        string type = context.Types(0).GetText(); // Obtener el tipo declarado
+        string type = context.Types()?.GetText(); // Obtener el tipo declarado, si existe
         ValueWrapper value;
 
         if (context.expr() != null && context.expr().Length > 0)
@@ -112,6 +115,17 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
                 "rune" => new SliceValue<char>(values.Cast<RuneValue>().Select(v => v.Value).ToList()),
                 _ => throw new SemanticError("Invalid type", context.Start)
             };
+        }
+        else if (context.GetText().Contains("{") && context.GetText().Contains("}"))
+        {
+            // Inicializar el slice con valores sin tipo explícito
+            var values = new List<ValueWrapper>();
+            foreach (var expr in context.expr())
+            {
+                values.Add(Visit(expr));
+            }
+
+            value = new SliceValue<ValueWrapper>(values);
         }
         else
         {
@@ -159,13 +173,256 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
         return defaultValue;
     }
 
+    //VisitSliceIndex
+    public override ValueWrapper VisitSliceIndex(LanguageParser.SliceIndexContext context)
+    {
+        // Obtener los argumentos: el slice y el valor a buscar
+        ValueWrapper sliceValue = Visit(context.expr(0));
+        ValueWrapper searchValue = Visit(context.expr(1));
+
+        // Validar que el primer argumento sea un SliceValue<T>
+        if (sliceValue is not ValueWrapper genericSlice || genericSlice.GetType().GetGenericTypeDefinition() != typeof(SliceValue<>))
+        {
+            throw new SemanticError("First argument must be a slice", context.Start);
+        }
+
+        // Obtener el tipo genérico del slice
+        Type sliceType = sliceValue.GetType().GetGenericArguments()[0];
+
+        // Buscar el índice del valor en el slice según el tipo de T
+        int index = -1;
+        if (sliceType == typeof(int) && sliceValue is SliceValue<int> intSlice && searchValue is IntValue intValue)
+        {
+            index = intSlice.Values.IndexOf(intValue.Value);
+        }
+        else if (sliceType == typeof(double) && sliceValue is SliceValue<double> floatSlice && searchValue is FloatValue floatValue)
+        {
+            index = floatSlice.Values.IndexOf(floatValue.Value);
+        }
+        else if (sliceType == typeof(string) && sliceValue is SliceValue<string> stringSlice && searchValue is StringValue stringValue)
+        {
+            index = stringSlice.Values.IndexOf(stringValue.Value);
+        }
+        else if (sliceType == typeof(bool) && sliceValue is SliceValue<bool> boolSlice && searchValue is BoolValue boolValue)
+        {
+            index = boolSlice.Values.IndexOf(boolValue.Value);
+        }
+        else if (sliceType == typeof(char) && sliceValue is SliceValue<char> runeSlice && searchValue is RuneValue runeValue)
+        {
+            index = runeSlice.Values.IndexOf(runeValue.Value);
+        }
+        else
+        {
+            throw new SemanticError("Type mismatch or invalid slice type", context.Start);
+        }
+
+        // Retornar el índice encontrado o -1 si no se encuentra
+        return new IntValue(index);
+    }
+
+    // VisitStringsJoin
+    public override ValueWrapper VisitStringsJoin(LanguageParser.StringsJoinContext context)
+    {
+        // Obtener el argumento: el slice
+        ValueWrapper sliceValue = Visit(context.expr());
+
+        // Validar que el argumento sea un SliceValue<string>
+        if (sliceValue is not SliceValue<string> stringSlice)
+        {
+            throw new SemanticError("First argument must be a slice of strings ([]string)", context.Start);
+        }
+
+        // Usar el separador fijo ", " para concatenar los elementos del slice
+        string result = string.Join(" ", stringSlice.Values);
+
+        // Retornar el resultado como un StringValue
+        return new StringValue(result);
+    }
+
+    // VisitAppendSlice
+    public override ValueWrapper VisitAppendSlice(LanguageParser.AppendSliceContext context)
+    {
+        // Obtener los argumentos: el slice y el elemento a agregar
+        ValueWrapper sliceValue = Visit(context.expr(0));
+        ValueWrapper elementValue = Visit(context.expr(1));
+
+        // Validar que el primer argumento sea un SliceValue<T>
+        if (sliceValue is not ValueWrapper genericSlice || genericSlice.GetType().GetGenericTypeDefinition() != typeof(SliceValue<>))
+        {
+            throw new SemanticError("First argument must be a slice", context.Start);
+        }
+
+        // Obtener el tipo genérico del slice
+        Type sliceType = sliceValue.GetType().GetGenericArguments()[0];
+
+        // Crear un nuevo slice con el elemento agregado
+        ValueWrapper newSlice = sliceType switch
+        {
+            Type t when t == typeof(int) && sliceValue is SliceValue<int> intSlice && elementValue is IntValue intValue =>
+                new SliceValue<int>(intSlice.Values.Concat(new[] { intValue.Value }).ToList()),
+            Type t when t == typeof(double) && sliceValue is SliceValue<double> floatSlice && elementValue is FloatValue floatValue =>
+                new SliceValue<double>(floatSlice.Values.Concat(new[] { floatValue.Value }).ToList()),
+            Type t when t == typeof(string) && sliceValue is SliceValue<string> stringSlice && elementValue is StringValue stringValue =>
+                new SliceValue<string>(stringSlice.Values.Concat(new[] { stringValue.Value }).ToList()),
+            Type t when t == typeof(bool) && sliceValue is SliceValue<bool> boolSlice && elementValue is BoolValue boolValue =>
+                new SliceValue<bool>(boolSlice.Values.Concat(new[] { boolValue.Value }).ToList()),
+            Type t when t == typeof(char) && sliceValue is SliceValue<char> runeSlice && elementValue is RuneValue runeValue =>
+                new SliceValue<char>(runeSlice.Values.Concat(new[] { runeValue.Value }).ToList()),
+            _ => throw new SemanticError("Type mismatch or invalid slice type", context.Start)
+        };
+
+        // Retornar el nuevo slice
+        return newSlice;
+    }
+
+    // VisitLenSlice
+    public override ValueWrapper VisitLenSlice(LanguageParser.LenSliceContext context)
+    {
+        // Obtener el argumento: el slice
+        ValueWrapper sliceValue = Visit(context.expr());
+
+        // Validar que el argumento sea un SliceValue<T>
+        if (sliceValue is not ValueWrapper genericSlice || genericSlice.GetType().GetGenericTypeDefinition() != typeof(SliceValue<>))
+        {
+            throw new SemanticError("Argument must be a slice", context.Start);
+        }
+
+        // Obtener la longitud del slice
+        int length = genericSlice switch
+        {
+            SliceValue<int> intSlice => intSlice.Values.Count,
+            SliceValue<double> floatSlice => floatSlice.Values.Count,
+            SliceValue<string> stringSlice => stringSlice.Values.Count,
+            SliceValue<bool> boolSlice => boolSlice.Values.Count,
+            SliceValue<char> runeSlice => runeSlice.Values.Count,
+            _ => throw new SemanticError("Invalid slice type", context.Start)
+        };
+
+        // Retornar la longitud como un IntValue
+        return new IntValue(length);
+    }
+
+    // TODO: lograr cambiar el valor de un índice del slice
+
     //VisitIndex
     public override ValueWrapper VisitIndex(LanguageParser.IndexContext context)
     {
+        // Obtener el identificador del slice y el índice
         string id = context.ID().GetText();
-        ValueWrapper slice = currentEnvironment.Get(id, context.Start);
-        int index = int.Parse(context.expr().GetText());
-        return Slices.GetIndexedValue(slice, index, context);
+        ValueWrapper sliceValue = currentEnvironment.Get(id, context.Start);
+        ValueWrapper indexValue = Visit(context.expr());
+
+        // Validar que el índice sea un IntValue
+        if (indexValue is not IntValue intIndex)
+        {
+            throw new SemanticError("Index must be an integer", context.Start);
+        }
+
+        // Validar que el slice sea un SliceValue<T>
+        if (sliceValue is not SliceValue<int> &&
+            sliceValue is not SliceValue<double> &&
+            sliceValue is not SliceValue<string> &&
+            sliceValue is not SliceValue<bool> &&
+            sliceValue is not SliceValue<char>)
+        {
+            throw new SemanticError($"Variable '{id}' is not a valid slice", context.Start);
+        }
+
+        // Validar que el índice esté dentro de los límites del slice
+        int sliceLength = sliceValue switch
+        {
+            SliceValue<int> intSlice => intSlice.Values.Count,
+            SliceValue<double> floatSlice => floatSlice.Values.Count,
+            SliceValue<string> stringSlice => stringSlice.Values.Count,
+            SliceValue<bool> boolSlice => boolSlice.Values.Count,
+            SliceValue<char> runeSlice => runeSlice.Values.Count,
+            _ => throw new SemanticError("Invalid slice type", context.Start)
+        };
+
+        if (intIndex.Value < 0 || intIndex.Value >= sliceLength)
+        {
+            throw new SemanticError("Index out of bounds", context.Start);
+        }
+
+        // Retornar el valor en el índice
+        var result = Slices.GetIndexedValue(sliceValue, intIndex.Value, context);
+
+        // Depuración: imprimir el valor devuelto
+        Console.WriteLine($"VisitIndex devuelve: {result}");
+
+        return result;
+    }
+
+    // VisitIndexAssig
+    public override ValueWrapper VisitIndexAssig(LanguageParser.IndexAssigContext context)
+    {
+        // Obtener el identificador del slice, el índice y el valor a asignar
+        string id = context.ID().GetText();
+        ValueWrapper sliceValue = currentEnvironment.Get(id, context.Start);
+        ValueWrapper indexValue = Visit(context.expr(0));
+        ValueWrapper newValue = Visit(context.expr(1));
+
+        // Validar que el índice sea un IntValue
+        if (indexValue is not IntValue intIndex)
+        {
+            throw new SemanticError("Index must be an integer", context.Start);
+        }
+
+        // Validar que el slice sea un SliceValue<T>
+        if (sliceValue is not SliceValue<int> &&
+            sliceValue is not SliceValue<double> &&
+            sliceValue is not SliceValue<string> &&
+            sliceValue is not SliceValue<bool> &&
+            sliceValue is not SliceValue<char>)
+        {
+            throw new SemanticError($"Variable '{id}' is not a valid slice", context.Start);
+        }
+
+        // Validar que el índice esté dentro de los límites del slice
+        int sliceLength = sliceValue switch
+        {
+            SliceValue<int> intSlice => intSlice.Values.Count,
+            SliceValue<double> floatSlice => floatSlice.Values.Count,
+            SliceValue<string> stringSlice => stringSlice.Values.Count,
+            SliceValue<bool> boolSlice => boolSlice.Values.Count,
+            SliceValue<char> runeSlice => runeSlice.Values.Count,
+            _ => throw new SemanticError("Invalid slice type", context.Start)
+        };
+
+        if (intIndex.Value < 0 || intIndex.Value >= sliceLength)
+        {
+            throw new SemanticError("Index out of bounds", context.Start);
+        }
+
+        // Asignar el nuevo valor al índice
+        switch (sliceValue)
+        {
+            case SliceValue<int> intSlice when newValue is IntValue intValue:
+                intSlice.Values[intIndex.Value] = intValue.Value;
+                break;
+
+            case SliceValue<double> floatSlice when newValue is FloatValue floatValue:
+                floatSlice.Values[intIndex.Value] = floatValue.Value;
+                break;
+
+            case SliceValue<string> stringSlice when newValue is StringValue stringValue:
+                stringSlice.Values[intIndex.Value] = stringValue.Value;
+                break;
+
+            case SliceValue<bool> boolSlice when newValue is BoolValue boolValue:
+                boolSlice.Values[intIndex.Value] = boolValue.Value;
+                break;
+
+            case SliceValue<char> runeSlice when newValue is RuneValue runeValue:
+                runeSlice.Values[intIndex.Value] = runeValue.Value;
+                break;
+
+            default:
+                throw new SemanticError("Type mismatch or invalid slice type", context.Start);
+        }
+
+        // Retornar el valor por defecto después de la asignación
+        return defaultValue;
     }
 
 
@@ -457,7 +714,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     }
     
     //VisitAssign
-public override ValueWrapper VisitAssign(LanguageParser.AssignContext context)
+    public override ValueWrapper VisitAssign(LanguageParser.AssignContext context)
     {
         var asignee = context.expr(0);
         ValueWrapper value = Visit(context.expr(1));
@@ -473,6 +730,20 @@ public override ValueWrapper VisitAssign(LanguageParser.AssignContext context)
                 throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {existingValue.GetType().Name}", context.Start);
             }
 
+            currentEnvironment.Assign(id, value, context.Start);
+            return defaultValue;
+        }
+        else if (asignee is LanguageParser.SliceInitContext sliceInitContext)
+        {
+            // Inicializar el slice con valores
+            var values = new List<ValueWrapper>();
+            foreach (var expr in sliceInitContext.expr())
+            {
+                values.Add(Visit(expr));
+            }
+
+            value = new SliceValue<ValueWrapper>(values);
+            string id = context.expr(0).GetText();
             currentEnvironment.Assign(id, value, context.Start);
             return defaultValue;
         }

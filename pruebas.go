@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"reflect"
+    "strings"
 )
 
 var i int // Variable global
@@ -23,5 +24,10 @@ func main() {
     tipoSlice := reflect.TypeOf(slice) 
     fmt.Println("Tipo de slice:", tipoSlice)
     fmt.Println(slice[1])
+
+    slicess := []string {"hola", "mundo"}
+    fmt.Println(strings.Join(slicess, " "))
+    valorIndice := slice[2]
+    fmt.Println(valorIndice)
 }
 
