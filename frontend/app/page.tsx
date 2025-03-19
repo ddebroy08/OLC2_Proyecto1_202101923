@@ -65,12 +65,34 @@ export default function Home() {
     }
   };
 
+  const handleAST = () => {
+    // Lógica para manejar AST
+    console.log("AST");
+  };
+
+  const handleErrors = () => {
+    // Lógica para manejar Errores
+    console.log("Errores");
+  };
+
+  const handleSymbols = () => {
+    // Lógica para manejar Símbolos
+    console.log("Símbolos");
+  };
+
   return (
     <div className='flex flex-col items-center justify-center min-h-screen py-2'>
-      <div className='flex space-x-2 p-2 bg-black w-full'>
-        <button onClick={handleCreateFile} className='bg-black text-white px-4 py-2 rounded'>Crear Archivos</button>
-        <button onClick={handleOpenFile} className='bg-black text-white px-4 py-2 rounded'>Abrir Archivos</button>
-        <button onClick={handleSaveFile} className='bg-black text-white px-4 py-2 rounded'>Guardar</button>
+      <div className='flex justify-between p-2 bg-black w-full'>
+        <div className='flex space-x-2'>
+          <button onClick={handleCreateFile} className='bg-black text-white px-4 py-2 rounded'>Crear Archivos</button>
+          <button onClick={handleOpenFile} className='bg-black text-white px-4 py-2 rounded'>Abrir Archivos</button>
+          <button onClick={handleSaveFile} className='bg-black text-white px-4 py-2 rounded'>Guardar</button>
+        </div>
+        <div className='flex space-x-2'>
+          <button onClick={handleAST} className='bg-black text-white px-4 py-2 rounded'>AST</button>
+          <button onClick={handleErrors} className='bg-black text-white px-4 py-2 rounded'>Errores</button>
+          <button onClick={handleSymbols} className='bg-black text-white px-4 py-2 rounded'>Símbolos</button>
+        </div>
       </div>
       <div className='flex flex-col w-full' style={{ height: '50vh' }}>
         <Editor
