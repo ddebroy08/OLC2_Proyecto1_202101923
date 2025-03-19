@@ -10,7 +10,7 @@ export default function Home() {
   const [output, setOutput] = useState<string>('');
 
   const handleExecute = async () => {
-    try{
+    try {
       const response = await fetch(`${API_URL}/compile`, {
         method: 'POST',
         headers: {
@@ -21,7 +21,7 @@ export default function Home() {
 
       const data = await response.json();
 
-      if(!response.ok){
+      if (!response.ok) {
         throw new Error(data.error || 'Error desconocido');
       }
 
@@ -33,33 +33,76 @@ export default function Home() {
     }
   };
 
+  const handleCreateFile = () => {
+    setCode('');
+  };
+
+  const handleOpenFile = async () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.glt';
+    fileInput.onchange = async (event) => {
+      const target = event.target as HTMLInputElement | null;
+      if (target && target.files) {
+        const file = target.files[0];
+        if (file) {
+          const text = await file.text();
+          setCode(text);
+        }
+      }
+    };
+    fileInput.click();
+  };
+
+  const handleSaveFile = async () => {
+    const filename = prompt('Introduce el nombre del archivo (sin extensión):');
+    if (filename) {
+      const blob = new Blob([code], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${filename}.glt`;
+      link.click();
+    }
+  };
+
   return (
     <div className='flex flex-col items-center justify-center min-h-screen py-2'>
-      <Editor
-        height='70vh'
-        defaultLanguage='javascript'
-        theme='vs-dark'
-        value={code}
-        onChange={(value) => setCode(value || '')}
-      />
+      <div className='flex space-x-2 p-2 bg-black w-full'>
+        <button onClick={handleCreateFile} className='bg-black text-white px-4 py-2 rounded'>Crear Archivos</button>
+        <button onClick={handleOpenFile} className='bg-black text-white px-4 py-2 rounded'>Abrir Archivos</button>
+        <button onClick={handleSaveFile} className='bg-black text-white px-4 py-2 rounded'>Guardar</button>
+      </div>
+      <div className='flex flex-col w-full' style={{ height: '50vh' }}>
+        <Editor
+          height='100%'
+          defaultLanguage='javascript'
+          theme='vs-dark'
+          value={code}
+          onChange={(value) => setCode(value || '')}
+        />
+      </div>
       <button
-        className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
+        className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2'
         onClick={handleExecute}
       >
         Ejecutar
       </button>
-      {output && (
-        <div className='flex flex-col items-center justify-center'>
-          <h2>Output:</h2>
-          <pre>{output}</pre>
+      <div className='flex flex-col items-center justify-center w-full' style={{ height: '50vh' }}>
+        <h2>Output:</h2>
+        <div className='w-full bg-white border rounded p-4 overflow-auto h-full'>
+          {output ? (
+            <pre className='text-black'>{output}</pre>
+          ) : (
+            <p className='text-black'>No hay salida para mostrar.</p>
+          )}
+          {error && (
+            <div className='bg-red-500 p-4 mt-2'>
+              <h3 className='text-white'>Error:</h3>
+              <pre className='text-white'>{error}</pre>
+            </div>
+          )}
         </div>
-      )}
-      {error && (
-        <div className='flex flex-col items-center justify-center bg-red-500 p-4 mt-6'>
-          <h2>Error:</h2>
-          <pre>{error}</pre>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
