@@ -133,6 +133,54 @@ public partial class LanguageBaseListener : ILanguageListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitFuncDcl([NotNull] LanguageParser.FuncDclContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structDcl"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterStructDcl([NotNull] LanguageParser.StructDclContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structDcl"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitStructDcl([NotNull] LanguageParser.StructDclContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structInit"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterStructInit([NotNull] LanguageParser.StructInitContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structInit"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitStructInit([NotNull] LanguageParser.StructInitContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structField"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterStructField([NotNull] LanguageParser.StructFieldContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structField"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitStructField([NotNull] LanguageParser.StructFieldContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structAttribute"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterStructAttribute([NotNull] LanguageParser.StructAttributeContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structAttribute"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitStructAttribute([NotNull] LanguageParser.StructAttributeContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="LanguageParser.classDcl"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>

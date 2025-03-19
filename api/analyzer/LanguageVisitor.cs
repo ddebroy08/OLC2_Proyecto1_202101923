@@ -81,6 +81,30 @@ public interface ILanguageVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitFuncDcl([NotNull] LanguageParser.FuncDclContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.structDcl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStructDcl([NotNull] LanguageParser.StructDclContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.structInit"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStructInit([NotNull] LanguageParser.StructInitContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.structField"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStructField([NotNull] LanguageParser.StructFieldContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="LanguageParser.structAttribute"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStructAttribute([NotNull] LanguageParser.StructAttributeContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="LanguageParser.classDcl"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

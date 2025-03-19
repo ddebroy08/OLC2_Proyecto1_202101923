@@ -2,7 +2,7 @@ grammar Language;
 
 program: dcl*;
 
-dcl: varDcl | sliceDcl | shortSliceDcl | sliceDclMultidimensional | stmt | shortVarDcl | classDcl | funcDcl;
+dcl: varDcl | sliceDcl | shortSliceDcl | sliceDclMultidimensional | stmt | shortVarDcl | classDcl | funcDcl | structDcl | structInit;
 
 varDcl: 'var' ID Types ('=' expr)? (';')?;
 
@@ -14,7 +14,15 @@ shortVarDcl: ID ':=' expr (';')?;
 
 shortSliceDcl: ID ':=' '[' ']' Types '{' expr (',' expr)* '}' (';')?;
 
-funcDcl: 'func' ID '(' params? ')' '{' dcl* '}';
+funcDcl: 'func' ID '(' (params)? ')' '{' dcl* '}';
+// TODO
+structDcl: 'struct' ID '{' structAttribute+ '}' (';')? ;
+// TODO
+structInit: ID '=' '{' structField (',' structField)* '}' ';';
+// TODO
+structField: ID ':' expr;
+// TODO
+structAttribute : Types ID ';';
 
 classDcl: 'class' ID '{' classBody* '}';
 
@@ -58,7 +66,7 @@ expr:
 	| 'strconv.ParseFloat(' expr ')' (';')? 	# ParseFloatStmt
 	| 'reflect.TypeOf(' expr ')' (';')? 		# TypeOfStmt
 	| 'slices.Index(' expr ',' expr ')'  (';')?	# sliceIndex
-	| 'strings.Join(' expr ', " ")' (';')?		# stringsJoin
+	| 'strings.Join(' expr ',' expr ')' (';')?		# stringsJoin
 	| 'append(' expr ',' expr ')' (';')?		# appendSlice
 	| 'len(' expr ')' (';')?					# lenSlice	
 	| BOOL										# Boolean

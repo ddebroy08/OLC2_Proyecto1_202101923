@@ -112,6 +112,46 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitFuncDcl([NotNull] LanguageParser.FuncDclContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structDcl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterStructDcl([NotNull] LanguageParser.StructDclContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structDcl"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitStructDcl([NotNull] LanguageParser.StructDclContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structInit"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterStructInit([NotNull] LanguageParser.StructInitContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structInit"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitStructInit([NotNull] LanguageParser.StructInitContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structField"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterStructField([NotNull] LanguageParser.StructFieldContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structField"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitStructField([NotNull] LanguageParser.StructFieldContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="LanguageParser.structAttribute"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterStructAttribute([NotNull] LanguageParser.StructAttributeContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="LanguageParser.structAttribute"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitStructAttribute([NotNull] LanguageParser.StructAttributeContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="LanguageParser.classDcl"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

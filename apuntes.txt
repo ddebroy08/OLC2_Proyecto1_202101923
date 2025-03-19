@@ -56,3 +56,56 @@ ENTRADAS PROBADAS
     fmt.Println(1.0 <= 1.0);
     // rune
     fmt.Println('a' <= 'a');
+
+
+
+
+
+
+
+
+
+ /*//var x []int
+ var x = []int {1, 2, 3, 4, 5}
+ z := []string {"hola", "adios", "bienvenido"}
+ fmt.Println(x)
+ fmt.Println(z)
+//x[1] = 5
+fmt.Println(strings.Join(z , " "))
+x = append(x, 15) 
+ fmt.Println("Agregando un int con append")
+fmt.Println(x[5])
+z = append(z, "15") 
+ fmt.Println("Agregando un string con append")
+fmt.Println(z)
+fmt.Println(slices.Index(x, 2))
+
+// Imprimir tamaños de arreglos
+fmt.Println("Imprimiento el slice z ------ >>>",len(z))
+*/
+
+
+numeros := []int{1, 2, 3}
+fmt.Println(numeros[2]) // Salida: 3
+l := numeros[2]
+fmt.Println(l)
+
+
+// Definición e inicialización directa 
+numerotes := []int{1, 2, 3, 4} 
+ 
+// Slice multidimensional inicial 
+mtx1 := [][]int{ 
+    {1, 2, 3}, 
+    {4, 5, 6}, 
+    {7, 8, 9}, 
+} 
+ 
+// Agregar el slice `numerotes` como una nueva fila 
+mtx1 = append(mtx1, numerotes) 
+ 
+fmt.Println(mtx1[3][2]) // 3 
+
+/*
+numeros[2] = 100
+fmt.Println(numeros) // Salida: [1, 2, 100] */

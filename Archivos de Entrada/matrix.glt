@@ -1,0 +1,28 @@
+x := 0
+fmt.Println(x)
+x = x + 1
+fmt.Println(x)
+
+// Los slices dentro de un slice no tiene porque tener el mismo tamaño 
+matriz := [][]int{ 
+    {1, 2, 3},      // Slice con 3 elementos 
+    {4, 5},         // Slice con 2 elementos 
+    {6, 7, 8, 9},   // Slice con 4 elementos 
+} 
+
+fmt.Println(matriz[1][1]) 
+
+// Definición e inicialización directa 
+numeros := []int{1, 2, 3, 4} 
+ 
+// Slice multidimensional inicial 
+mtx1 := [][]int{ 
+    {1, 2, 3}, 
+    {4, 5, 6}, 
+    {7, 8, 9}, 
+} 
+ 
+// Agregar el slice `numeros` como una nueva fila 
+mtx1 = append(mtx1, numeros) 
+ 
+fmt.Println(mtx1[3][2]) // 3 

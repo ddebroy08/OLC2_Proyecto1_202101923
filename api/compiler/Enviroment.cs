@@ -42,4 +42,9 @@ public class Environment
         throw new SemanticError("Variable " + id + " not found", token);
     }
 
+    public bool Contains(string name)
+    {
+        return variables.ContainsKey(name); // Asumiendo que `variables` es un diccionario que almacena las variables declaradas
+    }
+
 }

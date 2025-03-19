@@ -224,7 +224,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
     public override ValueWrapper VisitStringsJoin(LanguageParser.StringsJoinContext context)
     {
         // Obtener el argumento: el slice
-        ValueWrapper sliceValue = Visit(context.expr());
+        ValueWrapper sliceValue = Visit(context.expr(0)); // Primer argumento: el slice
 
         // Validar que el argumento sea un SliceValue<string>
         if (sliceValue is not SliceValue<string> stringSlice)
@@ -232,8 +232,17 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             throw new SemanticError("First argument must be a slice of strings ([]string)", context.Start);
         }
 
-        // Usar el separador fijo ", " para concatenar los elementos del slice
-        string result = string.Join(" ", stringSlice.Values);
+        // Obtener el separador
+        ValueWrapper separatorValue = Visit(context.expr(1));
+
+        // Validar que el separador sea un StringValue
+        if (separatorValue is not StringValue stringSeparator)
+        {
+            throw new SemanticError("Second argument must be a string", context.Start);
+        }
+
+        // Usar el separador obtenido para concatenar los elementos del slice
+        string result = string.Join(stringSeparator.Value, stringSlice.Values);
 
         // Retornar el resultado como un StringValue
         return new StringValue(result);
@@ -473,8 +482,8 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             rows.Add(row);
         }
 
-        // Validar que todas las filas tengan la misma longitud (si es un requisito)
-        int? rowLength = null;
+        // Validación si se quisiera que tuvieran el mismo tamaño los slices 
+        /*int? rowLength = null;
         foreach (var row in rows)
         {
             if (rowLength == null)
@@ -485,7 +494,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             {
                 throw new SemanticError("All rows in the matrix must have the same number of columns", context.Start);
             }
-        }
+        }*/
 
         // Crear un MatrixValue basado en el tipo declarado
         ValueWrapper value = type switch
@@ -731,6 +740,51 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             else if (value is SliceValue<char> runeSlice)
             {
                 output += "[" + string.Join(" ", runeSlice.Values.Select(v => ((int)v).ToString())) + "]";
+            } 
+            else if (value is MatrixValue<int> intMatrix)
+            {
+                output += "[\n";
+                foreach (var row in intMatrix.Values)
+                {
+                    output += "  [" + string.Join(" ", row) + "]\n";
+                }
+                output += "]";
+            }
+            else if (value is MatrixValue<double> floatMatrix)
+            {
+                output += "[\n";
+                foreach (var row in floatMatrix.Values)
+                {
+                    output += "  [" + string.Join(" ", row.Select(v => v.ToString(CultureInfo.InvariantCulture))) + "]\n";
+                }
+                output += "]";
+            }
+            else if (value is MatrixValue<string> stringMatrix)
+            {
+                output += "[\n";
+                foreach (var row in stringMatrix.Values)
+                {
+                    output += "  [" + string.Join(" ", row) + "]\n";
+                }
+                output += "]";
+            }
+            else if (value is MatrixValue<bool> boolMatrix)
+            {
+                output += "[\n";
+                foreach (var row in boolMatrix.Values)
+                {
+                    output += "  [" + string.Join(" ", row) + "]\n";
+                }
+                output += "]";
+            }
+            else if (value is MatrixValue<char> runeMatrix)
+            {
+                output += "[\n";
+                foreach (var row in runeMatrix.Values)
+                {
+                    output += "  [" + string.Join(" ", row.Select(v => ((int)v).ToString())) + "]\n";
+                }
+                output += "]";
             }
             else
             {
@@ -1530,6 +1584,73 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         currentEnvironment.Declare(context.ID().GetText(), new ClassValue(languageClass), context.Start);
         return defaultValue;
     }
+
+    // VisitStructDcl
+    public override ValueWrapper VisitStructDcl(LanguageParser.StructDclContext context)
+    {
+        // Obtener el nombre del struct
+        string structName = context.ID().GetText();
+
+        // Verificar si el struct ya está declarado
+        try
+        {
+            currentEnvironment.Get(structName, context.Start);
+            throw new SemanticError($"Struct '{structName}' is already declared", context.Start);
+        }
+        catch (KeyNotFoundException)
+        {
+            // No hacer nada, el struct no está declarado
+        }
+
+        // Obtener los atributos del struct
+        var attributes = new Dictionary<string, Type>();
+        foreach (var attributeContext in context.structAttribute())
+        {
+            string attributeName = attributeContext.ID().GetText();
+            string attributeType = attributeContext.Types().GetText();
+
+            // Validar que el atributo no esté duplicado
+            if (attributes.ContainsKey(attributeName))
+            {
+                throw new SemanticError($"Duplicate attribute '{attributeName}' in struct '{structName}'", context.Start);
+            }
+
+            // Registrar el atributo y su tipo
+            attributes[attributeName] = GetTypeFromString(attributeType, context.Start);
+        }
+
+        // Validar que el struct tenga al menos un atributo
+        if (attributes.Count == 0)
+        {
+            throw new SemanticError($"Struct '{structName}' must have at least one attribute", context.Start);
+        }
+
+        // Crear la definición del struct
+        var structDefinition = new StructDefinition(structName, attributes);
+
+        // Registrar el struct en el entorno global
+        currentEnvironment.Declare(structName, new StructValue(structDefinition), context.Start);
+
+        return defaultValue;
+    }
+
+    // Método auxiliar para convertir un tipo de string a Type
+    private Type GetTypeFromString(string type, Antlr4.Runtime.IToken token)
+    {
+        return type switch
+        {
+            "int" => typeof(int),
+            "float64" => typeof(double),
+            "string" => typeof(string),
+            "bool" => typeof(bool),
+            "rune" => typeof(char),
+            _ => throw new SemanticError($"Unsupported type '{type}'", token)
+        };
+    }
+
+    //VisitStructInit
+    
+
 
     //VisitNew
     public override ValueWrapper VisitNew (LanguageParser.NewContext context) 
