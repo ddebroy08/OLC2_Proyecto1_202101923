@@ -493,20 +493,6 @@ public partial class LanguageBaseListener : ILanguageListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitLogical([NotNull] LanguageParser.LogicalContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>Index</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIndex([NotNull] LanguageParser.IndexContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by the <c>Index</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIndex([NotNull] LanguageParser.IndexContext context) { }
-	/// <summary>
 	/// Enter a parse tree produced by the <c>String</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -842,20 +828,6 @@ public partial class LanguageBaseListener : ILanguageListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitAppendSlice([NotNull] LanguageParser.AppendSliceContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by the <c>IndexAssig</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIndexAssig([NotNull] LanguageParser.IndexAssigContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by the <c>IndexAssig</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIndexAssig([NotNull] LanguageParser.IndexAssigContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by the <c>FuncCall</c>
 	/// labeled alternative in <see cref="LanguageParser.call"/>.

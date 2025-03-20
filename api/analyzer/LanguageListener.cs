@@ -418,18 +418,6 @@ public interface ILanguageListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitLogical([NotNull] LanguageParser.LogicalContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>Index</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void EnterIndex([NotNull] LanguageParser.IndexContext context);
-	/// <summary>
-	/// Exit a parse tree produced by the <c>Index</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void ExitIndex([NotNull] LanguageParser.IndexContext context);
-	/// <summary>
 	/// Enter a parse tree produced by the <c>String</c>
 	/// labeled alternative in <see cref="LanguageParser.expr"/>.
 	/// </summary>
@@ -717,18 +705,6 @@ public interface ILanguageListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitAppendSlice([NotNull] LanguageParser.AppendSliceContext context);
-	/// <summary>
-	/// Enter a parse tree produced by the <c>IndexAssig</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void EnterIndexAssig([NotNull] LanguageParser.IndexAssigContext context);
-	/// <summary>
-	/// Exit a parse tree produced by the <c>IndexAssig</c>
-	/// labeled alternative in <see cref="LanguageParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void ExitIndexAssig([NotNull] LanguageParser.IndexAssigContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>FuncCall</c>
 	/// labeled alternative in <see cref="LanguageParser.call"/>.

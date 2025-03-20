@@ -52,37 +52,35 @@ stmt:
 forInit: shortVarDcl | expr;
 
 expr:
-	'-' expr									# Negate
-	| '!' expr									# Not
-	| expr call+  								# Calle
-	| expr op = ('*' | '/' | '%') expr			# MulDiv
-	| expr op = ('+' | '-') expr				# AddSub
-	| ID op = ('+=' | '-=') expr 				# AddSubAssign
-	| expr op = ('>' | '<' | '>=' | '<=') expr 	# Relational
-	| expr op = ('==' | '!=') expr 				# Equalitys
-	| expr op = ('&&' | '||') expr 				# Logical
-	| expr '=' expr								# Assign
-	| 'strconv.Atoi(' expr ')' (';')? 			# AtoiStmt
-	| 'strconv.ParseFloat(' expr ')' (';')? 	# ParseFloatStmt
-	| 'reflect.TypeOf(' expr ')' (';')? 		# TypeOfStmt
-	| 'slices.Index(' expr ',' expr ')'  (';')?	# sliceIndex
+	'-' expr										# Negate
+	| '!' expr										# Not
+	| expr call+  									# Calle
+	| expr op = ('*' | '/' | '%') expr				# MulDiv
+	| expr op = ('+' | '-') expr					# AddSub
+	| ID op = ('+=' | '-=') expr 					# AddSubAssign
+	| expr op = ('>' | '<' | '>=' | '<=') expr 		# Relational
+	| expr op = ('==' | '!=') expr 					# Equalitys
+	| expr op = ('&&' | '||') expr 					# Logical
+	| expr '=' expr									# Assign
+	| 'strconv.Atoi(' expr ')' (';')? 				# AtoiStmt
+	| 'strconv.ParseFloat(' expr ')' (';')? 		# ParseFloatStmt
+	| 'reflect.TypeOf(' expr ')' (';')? 			# TypeOfStmt
+	| 'slices.Index(' expr ',' expr ')'  (';')?		# sliceIndex
 	| 'strings.Join(' expr ',' expr ')' (';')?		# stringsJoin
-	| 'append(' expr ',' expr ')' (';')?		# appendSlice
-	| 'len(' expr ')' (';')?					# lenSlice	
-	| BOOL										# Boolean
-	| FLOAT										# Float
-	| STRING									# String			
-	| INT										# Int
-	| RUNE										# Rune
-	| 'new' ID '(' args? ')'					# New
-	| ID '[' expr ']' '=' expr					# IndexAssig
-	| ID '[' expr ']' 							# Index
-	| ID '[' expr ']' ('[' expr ']')* '=' expr  # MultiIndexAssig
-	| ID '[' expr ']' ('[' expr ']')*           # MultiIndex
-	| ID										# Identifier
-	| '[' expr ']' (';')? 						# brackets
-    | '{' row (',' row)* '}'                  # SliceInit
-	| '(' expr ')'								# Parens;
+	| 'append(' expr ',' expr ')' (';')?			# appendSlice
+	| 'len(' expr ( '[' expr ']' )? ')' (';')? 		# lenSlice
+	| BOOL											# Boolean
+	| FLOAT											# Float
+	| STRING										# String			
+	| INT											# Int
+	| RUNE											# Rune
+	| 'new' ID '(' args? ')'						# New
+	| ID '[' expr ']' ( '[' expr ']' )?           	# MultiIndex
+	| ID '[' expr ']' ( '[' expr ']' )? '=' expr  	# MultiIndexAssig
+	| ID											# Identifier
+	| '[' expr ']' (';')? 							# brackets
+    | '[' ']' Types '{' expr (',' expr)* '}'      	# SliceInit
+	| '(' expr ')'									# Parens;
 
 call: '(' args? ')' #FuncCall | '.' ID #Get;
 args: expr (',' expr)*;

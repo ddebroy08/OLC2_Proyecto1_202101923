@@ -110,7 +110,7 @@ export default function Home() {
         Ejecutar
       </button>
       <div className='flex flex-col items-center justify-center w-full' style={{ height: '50vh' }}>
-        <h2>Output:</h2>
+        <h2>Salida:</h2>
         <div className='w-full bg-white border rounded p-4 overflow-auto h-full'>
           {output ? (
             <pre className='text-black'>{output}</pre>
