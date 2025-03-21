@@ -32,22 +32,27 @@ params: ID (',' ID)*;
 
 row: '{' expr (',' expr)* '}';
 
-
 stmt: 
-	expr (';')? # ExprStmt 
-	| 'fmt.Println(' expr (',' expr)* ')' (';')? # PrintStmt
-	| '{' dcl* '}' # BlockStmt
-	| 'if'  expr  stmt ('else' stmt)? # IfStmt
-	| 'while' '(' expr ')' stmt # WhileStmt
-	| 'for' expr  stmt  # ForStmt
-	| 'for' forInit ';' expr ';' expr stmt # ForStmtIni
-	| 'switch' expr '{' stmt* '}' # SwitchStmt
-    | 'case' expr ':' stmt # CaseStmt
-    | 'default' ':' stmt # DefaultStmt
-	| 'break' (';')? # BreakStmt
-	| 'continue' (';')? # ContinueStmt
-	| 'return' expr? (';')? # ReturnStmt
+	expr (';')? 										# ExprStmt 
+	| 'fmt.Println(' (expr (',' expr)*)? ')' (';')? 	# PrintStmt
+	| '{' dcl* '}' 										# BlockStmt
+	| 'if'  expr  stmt ('else' stmt)? 					# IfStmt
+	| 'while' '(' expr ')' stmt 						# WhileStmt
+	| 'for' expr  stmt  								# ForStmt
+	| 'for' forInit ';' expr ';' expr stmt 				# ForStmtIni
+	| 'for' ID ',' ID ':=' 'range' expr stmt		 	# ForRangeStmt
+	| 'switch' expr '{' switchCase* '}'					# SwitchStmt
+	| 'break' (';')? 									# BreakStmt
+	| 'continue' (';')? 								# ContinueStmt
+	| 'return' expr? (';')?								# ReturnStmt
 	;
+
+switchCase:
+	'case' expr ':' stmt*								# CaseStmt
+	| 'default' ':' stmt* 								# DefaultStmt
+	;
+
+
 
 forInit: shortVarDcl | expr;
 
@@ -57,6 +62,8 @@ expr:
 	| expr call+  									# Calle
 	| expr op = ('*' | '/' | '%') expr				# MulDiv
 	| expr op = ('+' | '-') expr					# AddSub
+	| ID '++' (';')? 								# IncrementStmt
+    | ID '--' (';')? 								# DecrementStmt
 	| ID op = ('+=' | '-=') expr 					# AddSubAssign
 	| expr op = ('>' | '<' | '>=' | '<=') expr 		# Relational
 	| expr op = ('==' | '!=') expr 					# Equalitys

@@ -82,7 +82,7 @@ public class CompilerVisitor : LanguageBaseVisitor<ValueWrapper>
             throw new SemanticError($"Type mismatch: cannot assign value of type {value.GetType().Name} to variable {id} of type {type}", context.Start);
         }
 
-        currentEnvironment.Declare(id, value, context.Start);
+        //currentEnvironment.Declare(id, value, context.Start);
         return defaultValue;
     }
 
@@ -1704,21 +1704,41 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
         Environment previousEnvironment = currentEnvironment;
         currentEnvironment = new Environment(previousEnvironment);
 
+        //Evaluando la condición inicial
         ValueWrapper condition = Visit(context.expr());
-
         if (condition is not BoolValue)
         {
             throw new SemanticError("Invalid condition", context.Start);
         }
 
+        // Ejecutar el cuerpo del bucle mientras la condición sea verdadera
         while ((condition as BoolValue).Value)
         {
-            Visit(context.stmt());
-            condition = Visit(context.expr());
-            if (condition is not BoolValue)
+            try
             {
+                // Ejecutar el cuerpo del bucle
+                Visit(context.stmt());
 
-                throw new SemanticError("Invalid condition", context.Start);
+                // Reevaluar la condición
+                condition = Visit(context.expr());
+                if (condition is not BoolValue)
+                {
+                    throw new SemanticError("Invalid condition", context.Start);
+                }
+            }
+            catch (BreakException)
+            {
+                // Salir del bucle si se encuentra un "break"
+                break;
+            }
+            catch (ContinueException)
+            {
+                // Continuar con la siguiente iteración
+                condition = Visit(context.expr());
+                if (condition is not BoolValue)
+                {
+                    throw new SemanticError("Invalid condition", context.Start);
+                }
             }
         }
 
@@ -1727,104 +1747,377 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
     }
 
         //VisitForStmtIni
-    public override ValueWrapper VisitForStmtIni(LanguageParser.ForStmtIniContext context) {
-        Environment previousEnvironment = currentEnvironment;
-        currentEnvironment = new Environment(previousEnvironment);
+public override ValueWrapper VisitForStmtIni(LanguageParser.ForStmtIniContext context)
+{
+    Console.WriteLine("Entrando al bucle for clásico");
 
-        // Manejar inicialización (puede ser shortVarDcl o expr)
-        if (context.forInit().shortVarDcl() != null) {
-            Visit(context.forInit().shortVarDcl());
-        } else {
-            Visit(context.forInit().expr());
-        }
+    // Guardar el entorno actual y crear uno nuevo para el bucle
+    Environment previousEnvironment = currentEnvironment;
+    currentEnvironment = new Environment(previousEnvironment);
 
-        VisitForBody(context);
-
-        currentEnvironment = previousEnvironment; // Restaurar el entorno
-        return defaultValue;
+    // 1. Inicialización
+    if (context.forInit().shortVarDcl() != null)
+    {
+        Console.WriteLine("Inicializando el bucle");
+        Visit(context.forInit().shortVarDcl());
+    }
+    else
+    {
+        Visit(context.forInit().expr());
     }
 
-    public void VisitForBody(LanguageParser.ForStmtIniContext context) {
-        ValueWrapper condition = Visit(context.expr(0)); // Condición del for
+    // 2. Evaluar la condición inicial
+    ValueWrapper condition = Visit(context.expr(0));
+    Console.WriteLine($"Condición inicial: {condition}");
+    if (condition is not BoolValue)
+    {
+        throw new SemanticError("Invalid condition", context.Start);
+    }
 
-        while (condition is BoolValue boolCondition && boolCondition.Value) {
-            try {
-                Visit(context.stmt()); // Ejecutar el cuerpo del for
-                Visit(context.expr(1)); // Ejecutar la actualización
-                condition = Visit(context.expr(0)); // Reevaluar la condición
-            } catch (BreakException) {
-                break; // Salir del bucle si hay un "break"
-            } catch (ContinueException) {
-                Visit(context.expr(1)); // Ejecutar la actualización antes de continuar
-                condition = Visit(context.expr(0)); // Reevaluar la condición 
+    // 3. Ejecutar el cuerpo del bucle mientras la condición sea verdadera
+    while ((condition as BoolValue).Value)
+    {
+        try
+        {
+            Console.WriteLine("Ejecutando el cuerpo del bucle");
+            Visit(context.stmt());
+
+            Console.WriteLine("Ejecutando la actualización");
+            Visit(context.expr(1));
+
+            Console.WriteLine("Reevaluando la condición");
+            condition = Visit(context.expr(0));
+            if (condition is not BoolValue)
+            {
+                throw new SemanticError("Invalid condition", context.Start);
             }
-            // TODO ---> TRABAJAR return
-
         }
+        catch (BreakException)
+        {
+            Console.WriteLine("Break encontrado, saliendo del bucle");
+            break;
+        }
+        catch (ContinueException)
+        {
+            Console.WriteLine("Continue encontrado, reevaluando la condición");
+            Visit(context.expr(1));
+            condition = Visit(context.expr(0));
+            if (condition is not BoolValue)
+            {
+                throw new SemanticError("Invalid condition", context.Start);
+            }
+        }
+    }
+
+    // Restaurar el entorno anterior
+    currentEnvironment = previousEnvironment;
+    Console.WriteLine("Saliendo del bucle for clásico");
+    return defaultValue;
+}
+/*
+    public void VisitForBody(LanguageParser.ForStmtIniContext context)
+{
+    ValueWrapper condition = Visit(context.expr()); // Evaluar la condición del for
+
+    while (condition is BoolValue boolCondition && boolCondition.Value)
+    {
+        try
+        {
+            Visit(context.stmt(0)); // Ejecutar el cuerpo del for
+            Visit(context.stmt(1)); // Ejecutar la actualización (stmt en lugar de expr)
+            condition = Visit(context.expr()); // Reevaluar la condición
+        }
+        catch (BreakException)
+        {
+            break; // Salir del bucle si hay un "break"
+        }
+        catch (ContinueException)
+        {
+            Visit(context.stmt(1)); // Ejecutar la actualización antes de continuar
+            condition = Visit(context.expr()); // Reevaluar la condición
+        }
+    }
+}
+*/
+    //VisitForRangeStmt
+    public override ValueWrapper VisitForRangeStmt(LanguageParser.ForRangeStmtContext context)
+    {
+        // Obtener los identificadores para índice y valor
+        string indexVar = context.ID(0).GetText();
+        string valueVar = context.ID(1).GetText();
+
+        // Evaluar el slice o matriz
+        ValueWrapper collection = Visit(context.expr());
+
+        // Validar que sea un slice o matriz
+        if (collection is not SliceValue<int> &&
+            collection is not SliceValue<double> &&
+            collection is not SliceValue<string> &&
+            collection is not SliceValue<bool> &&
+            collection is not SliceValue<char>)
+        {
+            throw new SemanticError("Range can only be used with slices or matrices", context.Start);
+        }
+
+        // Iterar sobre el slice o matriz
+        if (collection is SliceValue<int> intSlice)
+        {
+            for (int i = 0; i < intSlice.Values.Count; i++)
+            {
+                // Crear un nuevo entorno para cada iteración
+                Environment previousEnvironment = currentEnvironment;
+                currentEnvironment = new Environment(previousEnvironment);
+
+                // Declarar índice y valor en el entorno temporal
+                currentEnvironment.Declare(indexVar, new IntValue(i), context.Start);
+                currentEnvironment.Declare(valueVar, new IntValue(intSlice.Values[i]), context.Start);
+
+                // Ejecutar el cuerpo del bucle
+                Visit(context.stmt());
+
+                // Restaurar el entorno anterior
+                currentEnvironment = previousEnvironment;
+            }
+        }
+        else if (collection is SliceValue<double> floatSlice)
+        {
+            for (int i = 0; i < floatSlice.Values.Count; i++)
+            {
+                Environment previousEnvironment = currentEnvironment;
+                currentEnvironment = new Environment(previousEnvironment);
+
+                currentEnvironment.Declare(indexVar, new IntValue(i), context.Start);
+                currentEnvironment.Declare(valueVar, new FloatValue(floatSlice.Values[i]), context.Start);
+
+                Visit(context.stmt());
+
+                currentEnvironment = previousEnvironment;
+            }
+        }
+        else if (collection is SliceValue<string> stringSlice)
+        {
+            for (int i = 0; i < stringSlice.Values.Count; i++)
+            {
+                Environment previousEnvironment = currentEnvironment;
+                currentEnvironment = new Environment(previousEnvironment);
+
+                currentEnvironment.Declare(indexVar, new IntValue(i), context.Start);
+                currentEnvironment.Declare(valueVar, new StringValue(stringSlice.Values[i]), context.Start);
+
+                Visit(context.stmt());
+
+                currentEnvironment = previousEnvironment;
+            }
+        }
+        else if (collection is SliceValue<bool> boolSlice)
+        {
+            for (int i = 0; i < boolSlice.Values.Count; i++)
+            {
+                Environment previousEnvironment = currentEnvironment;
+                currentEnvironment = new Environment(previousEnvironment);
+
+                currentEnvironment.Declare(indexVar, new IntValue(i), context.Start);
+                currentEnvironment.Declare(valueVar, new BoolValue(boolSlice.Values[i]), context.Start);
+
+                Visit(context.stmt());
+
+                currentEnvironment = previousEnvironment;
+            }
+        }
+        else if (collection is SliceValue<char> runeSlice)
+        {
+            for (int i = 0; i < runeSlice.Values.Count; i++)
+            {
+                Environment previousEnvironment = currentEnvironment;
+                currentEnvironment = new Environment(previousEnvironment);
+
+                currentEnvironment.Declare(indexVar, new IntValue(i), context.Start);
+                currentEnvironment.Declare(valueVar, new RuneValue(runeSlice.Values[i]), context.Start);
+
+                Visit(context.stmt());
+
+                currentEnvironment = previousEnvironment;
+            }
+        }
+
+        return defaultValue;
     }
 
     //VisitForInit
 
+
+
     // VisitSwitchStmt
-    public override ValueWrapper VisitSwitchStmt(LanguageParser.SwitchStmtContext context)
+public override ValueWrapper VisitSwitchStmt(LanguageParser.SwitchStmtContext context)
+{
+    // Crear un nuevo entorno para el switch
+    Environment previousEnvironment = currentEnvironment;
+    currentEnvironment = new Environment(previousEnvironment);
+
+    try
     {
-        // Crear un nuevo entorno
-        Environment previousEnvironment = currentEnvironment;
-        currentEnvironment = new Environment(previousEnvironment);
-
+        // Evaluar la expresión del switch UNA SOLA VEZ
         ValueWrapper switchValue = Visit(context.expr());
+        
+        // Indica si algún case ha coincidido
         bool caseMatched = false;
-
-        foreach (var stmt in context.stmt())
+        
+        // Iterar solo sobre los nodos de tipo switchCase
+        foreach (var switchCase in context.switchCase())
         {
-            if (stmt is LanguageParser.CaseStmtContext caseStmt)
+            // Si ya encontramos una coincidencia, salimos del bucle
+            if (caseMatched)
+                break;
+                
+            if (switchCase is LanguageParser.CaseStmtContext caseStmt)
             {
-                caseMatched = caseMatched || VisitCaseStmt(caseStmt, switchValue);
+                // Evaluar la expresión del case
+                ValueWrapper caseValue = Visit(caseStmt.expr());
+                
+                // Verificar tipos y valores
+                if (switchValue.GetType() != caseValue.GetType())
+                {
+                    throw new SemanticError("Type mismatch in switch case", caseStmt.Start);
+                }
+                
+                // Comprobamos si el valor del switch coincide con el valor del case
+                if (switchValue.Equals(caseValue))
+                {
+                    // IMPORTANTE: Ejecutamos SOLO las instrucciones del case que coincide
+                    caseMatched = true;
+                    
+                    try
+                    {
+                        foreach (var stmt in caseStmt.stmt())
+                        {
+                            Visit(stmt);
+                        }
+                    }
+                    catch (BreakException)
+                    {
+                        // Salir del switch al encontrar break
+                        break;
+                    }
+                }
             }
-            else if (stmt is LanguageParser.DefaultStmtContext defaultStmt && !caseMatched)
+            else if (switchCase is LanguageParser.DefaultStmtContext defaultStmt && !caseMatched)
             {
-                VisitDefaultStmt(defaultStmt);
+                // Ejecutar el default SOLO si no hay coincidencias
+                try
+                {
+                    foreach (var stmt in defaultStmt.stmt())
+                    {
+                        Visit(stmt);
+                    }
+                }
+                catch (BreakException)
+                {
+                    // Salir del switch al encontrar break
+                    break;
+                }
+                
+                // No es necesario seguir después del default
                 break;
             }
         }
-
+    }
+    finally
+    {
         // Restaurar el entorno anterior
         currentEnvironment = previousEnvironment;
+    }
+    
+    return defaultValue;
+}
+
+
+    // VisitCaseStmt
+    public override ValueWrapper VisitCaseStmt(LanguageParser.CaseStmtContext context)
+    {
+        // Este método se llama directamente desde el visitante, no desde VisitSwitchStmt
+        // porque el árbol ya habrá sido visitado por el VisitSwitchStmt
+        
+        // Si se llama directamente, ejecutar todas las instrucciones del case
+        foreach (var stmt in context.stmt())
+        {
+            Visit(stmt);
+        }
+        
+        return defaultValue;
+    }
+
+    // VisitDefaultStmt
+    public override ValueWrapper VisitDefaultStmt(LanguageParser.DefaultStmtContext context)
+    {
+        // Este método se llama directamente desde el visitante, no desde VisitSwitchStmt
+        // porque el árbol ya habrá sido visitado por el VisitSwitchStmt
+        
+        // Si se llama directamente, ejecutar todas las instrucciones del default
+        foreach (var stmt in context.stmt())
+        {
+            Visit(stmt);
+        }
+        
+        return defaultValue;
+    } 
+    
+
+
+    //VisitIncrementStmt
+    public override ValueWrapper VisitIncrementStmt(LanguageParser.IncrementStmtContext context)
+    {
+        string id = context.ID().GetText();
+
+        // Verificar si la variable existe en el entorno
+        ValueWrapper variable = currentEnvironment.Get(id, context.Start);
+        if (variable == null)
+        {
+            throw new SemanticError($"Variable '{id}' not declared", context.Start);
+        }
+
+        // Validar que la variable sea un entero o flotante
+        if (variable is IntValue intValue)
+        {
+            currentEnvironment.Assign(id, new IntValue(intValue.Value + 1), context.Start);
+        }
+        else if (variable is FloatValue floatValue)
+        {
+            currentEnvironment.Assign(id, new FloatValue(floatValue.Value + 1), context.Start);
+        }
+        else
+        {
+            throw new SemanticError($"Operator '++' not supported for type {variable.GetType().Name}", context.Start);
+        }
 
         return defaultValue;
     }
 
-// VisitCaseStmt mejorado para recibir el valor del switch
-    public bool VisitCaseStmt(LanguageParser.CaseStmtContext context, ValueWrapper switchValue)
+    //VisitDecrementStmt
+    public override ValueWrapper VisitDecrementStmt(LanguageParser.DecrementStmtContext context)
     {
-        ValueWrapper caseValue = Visit(context.expr());
+        string id = context.ID().GetText();
 
-        // Comprobar que los tipos coincidan
-        if (switchValue.GetType() != caseValue.GetType())
+        // Verificar si la variable existe en el entorno
+        ValueWrapper variable = currentEnvironment.Get(id, context.Start);
+        if (variable == null)
         {
-            throw new SemanticError("Type mismatch in switch case", context.Start);
+            throw new SemanticError($"Variable '{id}' not declared", context.Start);
         }
 
-        // Si los valores coinciden, ejecutamos el bloque del `case`
-        if (switchValue.Equals(caseValue))
+        // Validar que la variable sea un entero o flotante
+        if (variable is IntValue intValue)
         {
-            try{
-                Visit(context.stmt());
-            } catch (BreakException) {
-                return true; // Indicamos que un `case` ha sido ejecutado
-            } catch (ContinueException) {
-                throw new SemanticError("Continue is not valid in a switch case", context.Start);
-            }
-            return true; // Indicamos que un `case` ha sido ejecutado
+            currentEnvironment.Assign(id, new IntValue(intValue.Value - 1), context.Start);
+        }
+        else if (variable is FloatValue floatValue)
+        {
+            currentEnvironment.Assign(id, new FloatValue(floatValue.Value - 1), context.Start);
+        }
+        else
+        {
+            throw new SemanticError($"Operator '--' not supported for type {variable.GetType().Name}", context.Start);
         }
 
-        return false; // No coincidió
-    }
-
-    // VisitDefaultStmt permanece igual
-    public override ValueWrapper VisitDefaultStmt(LanguageParser.DefaultStmtContext context)
-    {
-        Visit(context.stmt());
         return defaultValue;
     }
 
@@ -2076,8 +2369,6 @@ public override ValueWrapper VisitRune(LanguageParser.RuneContext context) {
 
     //VisitStructInit
     
-
-
     //VisitNew
     public override ValueWrapper VisitNew (LanguageParser.NewContext context) 
     {
