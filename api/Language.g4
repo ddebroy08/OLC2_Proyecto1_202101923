@@ -14,7 +14,7 @@ shortVarDcl: ID ':=' expr (';')?;
 
 shortSliceDcl: ID ':=' '[' ']' Types '{' expr (',' expr)* '}' (';')?;
 
-funcDcl: 'func' ID '(' (params)? ')' '{' dcl* '}';
+funcDcl: 'func' ID '(' (params)? ')' Types? '{' dcl* '}';
 // TODO
 structDcl: 'struct' ID '{' structAttribute+ '}' (';')? ;
 // TODO
@@ -28,7 +28,7 @@ classDcl: 'class' ID '{' classBody* '}';
 
 classBody: varDcl | shortVarDcl | funcDcl;
 
-params: ID (',' ID)*;
+params: (ID Types) (',' ID Types)*;
 
 row: '{' expr (',' expr)* '}';
 
